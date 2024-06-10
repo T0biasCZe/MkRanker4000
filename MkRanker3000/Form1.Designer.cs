@@ -35,9 +35,11 @@
 			numericUpDown_cc = new NumericUpDown();
 			checkBox_mirror = new CheckBox();
 			comboBox_trat = new ComboBox();
-			listBox1 = new ListBox();
 			textBox_pridatZavodnika = new TextBox();
 			comboBox_vybiracTrate = new ComboBox();
+			button1 = new Button();
+			checkBox_isBot = new CheckBox();
+			listBox1 = new ListBox();
 			((System.ComponentModel.ISupportInitialize)numericUpDown_pozice).BeginInit();
 			((System.ComponentModel.ISupportInitialize)numericUpDown_cc).BeginInit();
 			SuspendLayout();
@@ -48,7 +50,7 @@
 			listBox_e.ItemHeight = 15;
 			listBox_e.Location = new Point(376, 16);
 			listBox_e.Name = "listBox_e";
-			listBox_e.Size = new Size(528, 559);
+			listBox_e.Size = new Size(528, 499);
 			listBox_e.TabIndex = 0;
 			// 
 			// numericUpDown_pozice
@@ -162,21 +164,12 @@
 			comboBox_trat.Size = new Size(160, 23);
 			comboBox_trat.TabIndex = 13;
 			// 
-			// listBox1
-			// 
-			listBox1.FormattingEnabled = true;
-			listBox1.ItemHeight = 15;
-			listBox1.Location = new Point(200, 32);
-			listBox1.Name = "listBox1";
-			listBox1.Size = new Size(160, 229);
-			listBox1.TabIndex = 14;
-			// 
 			// textBox_pridatZavodnika
 			// 
-			textBox_pridatZavodnika.Location = new Point(200, 264);
+			textBox_pridatZavodnika.Location = new Point(248, 385);
 			textBox_pridatZavodnika.Name = "textBox_pridatZavodnika";
 			textBox_pridatZavodnika.PlaceholderText = "Přidat závodnika";
-			textBox_pridatZavodnika.Size = new Size(160, 23);
+			textBox_pridatZavodnika.Size = new Size(112, 23);
 			textBox_pridatZavodnika.TabIndex = 15;
 			textBox_pridatZavodnika.KeyPress += textBox_pridatZavodnika_KeyPress;
 			// 
@@ -188,11 +181,43 @@
 			comboBox_vybiracTrate.Size = new Size(160, 23);
 			comboBox_vybiracTrate.TabIndex = 16;
 			// 
+			// button1
+			// 
+			button1.Font = new Font("Comic Sans MS", 11.25F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
+			button1.Location = new Point(48, 376);
+			button1.Name = "button1";
+			button1.Size = new Size(120, 48);
+			button1.TabIndex = 17;
+			button1.Text = "OCR MAGIC";
+			button1.UseVisualStyleBackColor = true;
+			button1.Click += button1_Click;
+			// 
+			// checkBox_isBot
+			// 
+			checkBox_isBot.AutoSize = true;
+			checkBox_isBot.Location = new Point(200, 388);
+			checkBox_isBot.Name = "checkBox_isBot";
+			checkBox_isBot.Size = new Size(44, 19);
+			checkBox_isBot.TabIndex = 18;
+			checkBox_isBot.Text = "bot";
+			checkBox_isBot.UseVisualStyleBackColor = true;
+			// 
+			// listBox1
+			// 
+			listBox1.FormattingEnabled = true;
+			listBox1.ItemHeight = 15;
+			listBox1.Location = new Point(200, 32);
+			listBox1.Name = "listBox1";
+			listBox1.Size = new Size(160, 349);
+			listBox1.TabIndex = 14;
+			// 
 			// Form1
 			// 
 			AutoScaleDimensions = new SizeF(7F, 15F);
 			AutoScaleMode = AutoScaleMode.Font;
-			ClientSize = new Size(919, 583);
+			ClientSize = new Size(919, 529);
+			Controls.Add(checkBox_isBot);
+			Controls.Add(button1);
 			Controls.Add(comboBox_vybiracTrate);
 			Controls.Add(textBox_pridatZavodnika);
 			Controls.Add(listBox1);
@@ -210,6 +235,7 @@
 			Controls.Add(listBox_e);
 			Name = "Form1";
 			Text = "Form1";
+			Resize += Form1_Resize;
 			((System.ComponentModel.ISupportInitialize)numericUpDown_pozice).EndInit();
 			((System.ComponentModel.ISupportInitialize)numericUpDown_cc).EndInit();
 			ResumeLayout(false);
@@ -230,8 +256,10 @@
 		private NumericUpDown numericUpDown_cc;
 		private CheckBox checkBox_mirror;
 		private ComboBox comboBox_trat;
-		private ListBox listBox1;
 		private TextBox textBox_pridatZavodnika;
 		private ComboBox comboBox_vybiracTrate;
+		private Button button1;
+		private CheckBox checkBox_isBot;
+		private ListBox listBox1;
 	}
 }

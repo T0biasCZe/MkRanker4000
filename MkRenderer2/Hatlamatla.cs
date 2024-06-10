@@ -88,6 +88,7 @@ namespace MkRenderer2 {
 			StringBuilder karticky = new StringBuilder();
 			//karticky.AppendLine("<link rel=\"stylesheet\"  href=\"./css/style.css\">");
 			foreach(var zavodnik in zavodnici) {
+				if(zavodnik.isBot) continue;
 				StringBuilder karticka = new StringBuilder(template);
 				if(zavodnik.nick == "lilibox") {
 					karticka.Replace("{MEDIAN_POZICE}", "{MEDIAN_POZICE}\n<p>Počet VPN vrstev: <?php echo(rand (1,20)); ?></p> ");
@@ -97,6 +98,23 @@ namespace MkRenderer2 {
 				karticka.Replace("{PRUMERNA_POZICE}", zavodnik.prumernePoradi.ToString("0.0"));
 				karticka.Replace("{MEDIAN_POZICE}", zavodnik.medianPoradi.ToString());
 				karticka.Replace("{POCET_DNU}", zavodnik.pocetUjetychDnu.ToString());
+				if(!total) {
+					string vybraneTrateTemplate = "<div class=\"Trat\">Vybrané tratě:<br>{TRAT}</div>";
+					foreach(var trat in zavodnik.vybraneTrate) {
+						vybraneTrateTemplate = vybraneTrateTemplate.Replace("{TRAT}", trat.nazev + " " + trat.kolikratVybrano + "x, {TRAT}");
+					}
+					vybraneTrateTemplate = vybraneTrateTemplate.Replace(", {TRAT}", "");
+					karticka.Replace("{VYBRANE_TRATE}", vybraneTrateTemplate);
+				}
+				else {
+					string vybraneTrateTemplate = "<div class=\"Trat\">Nejoblíbenější tratě:<br>{TRAT}</div>";
+					var vybraneTrate = zavodnik.vybraneTrate.OrderByDescending(t => t.kolikratVybrano).Take(5);
+					foreach(var trat in vybraneTrate) {
+						vybraneTrateTemplate = vybraneTrateTemplate.Replace("{TRAT}", trat.nazev + " " + trat.kolikratVybrano + "x<br>{TRAT}");
+					}
+					vybraneTrateTemplate = vybraneTrateTemplate.Replace("<br>{TRAT}", "");
+					karticka.Replace("{VYBRANE_TRATE}", vybraneTrateTemplate);
+				}
 
 				karticky.Append(karticka.ToString());
 			}

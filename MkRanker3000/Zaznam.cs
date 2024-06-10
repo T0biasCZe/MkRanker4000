@@ -16,8 +16,9 @@ public class Zaznam {
 	public int poradi = 999;
 	public string trat = "";
 	public string vybiracTrate = "";
+	public bool isBot = false;
 	public override string ToString() {
-		return this.zprava + ";" + this.casZaznamu + ";" + this.zavodnik + ";" + this.cc + ";" + this.mirrorOn + ";" + this.cup + ";" + this.zavod + ";" + this.poradi + ";" + this.trat + ";" + this.vybiracTrate;
+		return this.zprava + ";" + this.casZaznamu + ";" + this.zavodnik + ";" + this.cc + ";" + this.mirrorOn + ";" + this.cup + ";" + this.zavod + ";" + this.poradi + ";" + this.trat + ";" + this.vybiracTrate + ";" + this.isBot;
 	}
 }
 public class Zavodnik {

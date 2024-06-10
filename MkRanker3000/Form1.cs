@@ -1,8 +1,9 @@
+using MkRanker3000;
 using System.Text;
 
 namespace MKRanker3000 {
 	public partial class Form1 : Form {
-		public static string[] zavodnici = { "Tobik", "Stoupa", "Cvrcek", "Benish", "John Beak", "lilibox", "Mates", "Tom", "Swatty", "Jan3", "Boun", "Mates1500" };
+		public static List<string> zavodnici = new List<string> { "TheStoupa", "T0biasCZe", "Tom", "Jane", "Cwrcekk", "Boun", "BeNiSh", "Claudi", "lilibox", "Mates", "John Beak", "NUL", "Honzik" };
 		public static List<Zaznam> zaznamy = new List<Zaznam>();
 		public Form1() {
 			InitializeComponent();
@@ -20,19 +21,31 @@ namespace MKRanker3000 {
 		int actualniZavod = 1;
 		int actualniCC = 150;
 		bool actualniMirror = false;
+
+		bool overrideZavodnik = false;
+		string zavodnikOverride = "";
+
 		private void button_submitZaznam_Click(object sender, EventArgs e) {
 			Zaznam zaznam = new Zaznam();
 			//zaznam.zavodnik = comboBox_zavodnik.Text;
-			zaznam.zavodnik = listBox1.SelectedItem.ToString();
+
+			if(overrideZavodnik) {
+				zaznam.zavodnik = zavodnikOverride;
+				overrideZavodnik = false;
+			}
+			else zaznam.zavodnik = listBox1.SelectedItem.ToString();
+
 			zaznam.cup = actualniCup;
 			zaznam.zavod = actualniZavod;
 			zaznam.poradi = (int)numericUpDown_pozice.Value;
 			zaznam.trat = comboBox_trat.Text;
 			zaznam.vybiracTrate = comboBox_vybiracTrate.Text;
 			zaznam.casZaznamu = DateTime.Now;
+			zaznam.isBot = checkBox_isBot.Checked;
 
 			zaznamy.Add(zaznam);
 			listBox_e.Items.Add(zaznam);
+			listBox_e.SelectedIndex = listBox_e.Items.Count - 1;
 
 			writeCsv();
 		}
@@ -92,6 +105,7 @@ namespace MKRanker3000 {
 			}
 			File.WriteAllText("zaznamy.csv", csv.ToString());
 		}
+
 		private void loadCsv() {
 			string[] lines = File.ReadAllLines("zaznamy.csv");
 			foreach(string line in lines) {
@@ -99,7 +113,8 @@ namespace MKRanker3000 {
 				Zaznam zaznam = new Zaznam();
 				zaznam.zprava = parts[0];
 				zaznam.casZaznamu = DateTime.Parse(parts[1]);
-				zaznam.zavodnik = parts[2];
+
+
 				zaznam.cc = int.Parse(parts[3]);
 				zaznam.mirrorOn = bool.Parse(parts[4]);
 				zaznam.cup = int.Parse(parts[5]);
@@ -108,6 +123,7 @@ namespace MKRanker3000 {
 				zaznam.trat = parts[8];
 				if(parts.Length > 9) {
 					zaznam.vybiracTrate = parts[9];
+
 				}
 				zaznamy.Add(zaznam);
 				listBox_e.Items.Add(zaznam);
@@ -119,7 +135,42 @@ namespace MKRanker3000 {
 			if(e.KeyChar == (char)Keys.Enter) {
 				//comboBox_zavodnik.Items.Add(textBox_pridatZavodnika.Text);
 				listBox1.Items.Add(textBox_pridatZavodnika.Text);
+				zavodnici.Add(textBox_pridatZavodnika.Text);
 				textBox_pridatZavodnika.Text = "";
+			}
+		}
+
+		private void Form1_Resize(object sender, EventArgs e) {
+			listBox_e.Height = this.Height - 48 - 8;
+		}
+
+		private void button1_Click(object sender, EventArgs e) {
+			OCR ocr = new OCR();
+			ocr.playersList = zavodnici;
+			ocr.ShowDialog();
+
+			if(ocr.success) {
+
+				var data = ocr.output;
+				foreach(var zaznam in data) {
+					try {
+						checkBox_isBot.Checked = zaznam.isBot;
+						checkBox_isBot.Refresh();
+						zavodnikOverride = zaznam.zavodnik;
+						overrideZavodnik = true;
+						numericUpDown_pozice.Value = zaznam.pozice;
+
+						Thread.Sleep(16);
+
+						button_submitZaznam.PerformClick();
+					}
+					catch(Exception ex) {
+						MessageBox.Show(ex.ToString(), "OKUREK", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					}
+				}
+			}
+			else {
+				System.Media.SystemSounds.Beep.Play();
 			}
 		}
 	}

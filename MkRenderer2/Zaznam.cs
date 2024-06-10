@@ -17,9 +17,14 @@ public class Zaznam {
 	public int poradi = 999;
 	public string trat = "";
 	public string vybiracTrate = "";
+	public bool isBot = false;
 	public override string ToString() {
 		return this.zprava + ";" + this.casZaznamu + ";" + this.zavodnik + ";" + this.cc + ";" + this.mirrorOn + ";" + this.cup + ";" + this.zavod + ";" + this.poradi + ";" + this.trat;
 	}
+}
+public class Trat {
+	public string nazev;
+	public int kolikratVybrano;
 }
 public class Zavodnik {
 	public string nick = "";
@@ -29,6 +34,8 @@ public class Zavodnik {
 	public float medianPoradi;
 	public int[] pocetDojetiNaIndexu = new int[12];
 	public int pocetUjetychDnu;
+	public bool isBot;
+	public List<Trat> vybraneTrate = new List<Trat>();
 	public void RecalcPos() {
 		//calculate average position of each zavodnik
 		int celkem = 0;
@@ -48,7 +55,17 @@ public class Zavodnik {
 			if(celkem >= pocet / 2) {
 				medianPoradi = i + 1;
 				break;
+			}
 		}
+	}
+	public void PridatTrat(string nazevTrate) {
+		//if trat is already in list, increase the kolikratVybrano, else add it as new and set kolikratVybrano to 1
+		Trat t = vybraneTrate.FirstOrDefault(x => x.nazev == nazevTrate);
+		if(t != null) {
+			t.kolikratVybrano++;
+		}
+		else {
+			vybraneTrate.Add(new Trat() { nazev = nazevTrate, kolikratVybrano = 1 });
 		}
 	}
 }

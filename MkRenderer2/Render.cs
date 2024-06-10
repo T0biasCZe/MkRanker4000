@@ -34,14 +34,14 @@ namespace MkRenderer2 {
 			public List<Tuple<Zavodnik, int>> zavodnici = new List<Tuple<Zavodnik, int>>(); //pair of zavodnik and their position in this race
 		}
 		private static Dictionary<string, Color> nicknameColors = new Dictionary<string, Color> {
-			{ "Stoupa", Color.Purple },
+			{ "TheStoupa", Color.Purple },
 			{ "John Beak", Color.Cyan },
-			{ "Tobik", Color.Lime},
+			{ "T0biasCZe", Color.Lime},
 			{ "lilibox", Color.Sienna },
-			{ "Benish", Color.Yellow },
+			{ "BeNiSh", Color.Yellow },
 			{ "Mates", Color.FromArgb(255, 223, 197, 254) },
 			{ "Tom", Color.OrangeRed },
-			{ "Cvrcek", Color.DarkGreen },
+			{ "Cwrcekk", Color.DarkGreen },
 			{ "Boun", Color.DarkGray },
 			{ "Swatty", Color.Salmon },
 		};
@@ -68,6 +68,7 @@ namespace MkRenderer2 {
 				if(zavodnik == null) {
 					zavodnik = new Zavodnik();
 					zavodnik.nick = zaznam.zavodnik;
+					zavodnik.isBot = zaznam.isBot;
 					if(nicknameColors.ContainsKey(zavodnik.nick)) {
 						zavodnik.barva = nicknameColors[zavodnik.nick];
 					}
@@ -85,9 +86,20 @@ namespace MkRenderer2 {
 
 						Console.ResetColor();
 					}
+
 					zavodnici.Add(zavodnik);
 				}
-
+				if(zaznam.vybiracTrate.Length > 1) {
+					if(zaznam.zavod == 99) goto escape;
+					string[] vybiraciTrate = zaznam.vybiracTrate.Split(',');
+					foreach(string vybiracTrate in vybiraciTrate) {
+						if(vybiracTrate.Trim().ToLower().Equals(zaznam.zavodnik.Trim().ToLower())) {
+							zavodnik.PridatTrat(zaznam.trat);
+							Console.WriteLine("vybirac trate je zavodnik, pridavam trat " + zaznam.trat + " zavodnikovi " + zaznam.zavodnik);
+						}
+					}
+				}
+				escape:;
 				if(cup != zaznam.cup) {
 					cup = zaznam.cup;
 					zavod = 1;
@@ -177,8 +189,12 @@ namespace MkRenderer2 {
 
 			//vypsat jmena v jejich barve na prave strane
 			if(legenda) {
-				for(int i = 0; i < zavodnici.Count; i++) {
-					graphics.DrawString(zavodnici[i].nick, new Font("Arial", 12), new SolidBrush(zavodnici[i].barva), new PointF(sirkaBitmapy - 100, i * 20 + OFFSET_ZHORA));
+				for(int i = 0, j = 0; i < zavodnici.Count; i++, j++) {
+					if(zavodnici[i].isBot) {
+						j--;
+						continue;
+					}
+					graphics.DrawString(zavodnici[i].nick, new Font("Arial", 12), new SolidBrush(zavodnici[i].barva), new PointF(sirkaBitmapy - 100, j * 20 + OFFSET_ZHORA));
 				}
 			}
 
@@ -194,7 +210,9 @@ namespace MkRenderer2 {
 				}
 				bitmap.SetPixel(x, OFFSET_ZHORA + MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY + 1, BARVA_CAR);
 			}
-			bitmap.SetPixel(bitmap.Width - 132, OFFSET_ZHORA + MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY + 1, BARVA_CAR);
+			int lastPixel = bitmap.Width - 132;
+			if(lastPixel > 0)
+				bitmap.SetPixel(lastPixel, OFFSET_ZHORA + MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY + 1, BARVA_CAR);
 
 
 			System.Drawing.StringFormat drawFormat = new System.Drawing.StringFormat();
@@ -207,6 +225,7 @@ namespace MkRenderer2 {
 				string trat = zavod_.zavod == 99 ? "Final" : zavod_.trat;
 				graphics.DrawString(trat, font, brush, x - 10, OFFSET_ZHORA + MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY + 5, drawFormat);
 				for(int zavodnikIndex = 0; zavodnikIndex < zavod_.zavodnici.Count; zavodnikIndex++) {
+					if(zavod_.zavodnici[zavodnikIndex].Item1.isBot) continue;
 
 					Tuple<Zavodnik, int> zavodnik = zavod_.zavodnici[zavodnikIndex];
 					if(filter.Trim().Length != 0 && zavodnik.Item1.nick != filter) continue;

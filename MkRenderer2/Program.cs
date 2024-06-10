@@ -78,12 +78,19 @@ namespace MkRenderer2 {
 
 						zavodnik_total.RecalcPos();
 						zavodnik_total.pocetUjetychDnu += 1;
+
+						foreach(Trat t in zavodnik.vybraneTrate) {
+							for(int i = 1; i <= t.kolikratVybrano; i++) {
+								zavodnik_total.PridatTrat(t.nazev);
+							}
+						}
 					}
 				}
 
 				/*save colour with jmena to barvy.txt with format "#RRGGBB;Nick"*/
 				StreamWriter sw = new StreamWriter($".\\out\\{filename}\\barvy.txt");
 				for(int i = 0; i < zavodnici.Count; i++) {
+					if(zavodnici[i].isBot) continue;
 					sw.WriteLine(zavodnici[i].barva.ToHex() + ";" + zavodnici[i].nick);
 				}
 				sw.Flush();
@@ -93,6 +100,16 @@ namespace MkRenderer2 {
 			Hatlamatla.zpracovatOverallKartickyZavodniku(zavodnici_total);
 
 		}
+		static Dictionary<string, string> stareNazvyNaNově = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+			{"Mates", "Mates<>"},
+			{"TheStoupa", "Stoupa"},
+			{"Cwrcekk", "Cvrcek"},
+			{"T0biasCZe", "Tobik"},
+			{"Benish", "BeNiSh"},
+			{"Fernettak", "Fernetak"},
+			{"ClaudiXd", "Claudi"},
+			{"petgridus", "PetGriDus"},
+		};
 		private static List<Zaznam> loadCsv(string file) {
 			//string[] lines = File.ReadAllLines("zaznamy.csv");
 			string[] lines = File.ReadAllLines(file);
@@ -102,7 +119,13 @@ namespace MkRenderer2 {
 				Zaznam zaznam = new Zaznam();
 				zaznam.zprava = parts[0];
 				zaznam.casZaznamu = DateTime.Parse(parts[1]);
-				zaznam.zavodnik = parts[2];
+				string zavodnik = parts[2];
+				//if string "zavodnik" is in dictionary replace it with the new one
+				if(stareNazvyNaNově.ContainsKey(zavodnik)) {
+					zaznam.zavodnik = stareNazvyNaNově[zavodnik];
+				}
+				else zaznam.zavodnik = zavodnik;
+
 				zaznam.cc = int.Parse(parts[3]);
 				zaznam.mirrorOn = bool.Parse(parts[4]);
 				zaznam.cup = int.Parse(parts[5]);
@@ -110,8 +133,17 @@ namespace MkRenderer2 {
 				zaznam.poradi = int.Parse(parts[7]);
 				zaznam.trat = parts[8];
 				if(parts.Length > 9) {
-					zaznam.vybiracTrate = parts[9];
+					string vybiracTrate = parts[9];
+					//if string "zavodnik" is in dictionary replace it with the new one
+					if(stareNazvyNaNově.ContainsKey(vybiracTrate)) {
+						zaznam.vybiracTrate = stareNazvyNaNově[vybiracTrate];
+					}
+					else zaznam.vybiracTrate = vybiracTrate;
 					Console.WriteLine("trat vybrana hračem " + zaznam.vybiracTrate);
+
+					if(parts.Length > 10) {
+						zaznam.isBot = bool.Parse(parts[10]);
+					}
 				}
 				zaznamy.Add(zaznam);
 			}
