@@ -51,7 +51,7 @@
 			listBox_e.Location = new Point(376, 16);
 			listBox_e.Name = "listBox_e";
 			listBox_e.Size = new Size(528, 499);
-			listBox_e.TabIndex = 0;
+			listBox_e.TabIndex = 140;
 			// 
 			// numericUpDown_pozice
 			// 
@@ -61,14 +61,14 @@
 			numericUpDown_pozice.Name = "numericUpDown_pozice";
 			numericUpDown_pozice.Size = new Size(160, 23);
 			numericUpDown_pozice.TabIndex = 2;
-			numericUpDown_pozice.Value = new decimal(new int[] { 1, 0, 0, 0 });
+			numericUpDown_pozice.Value = new decimal(new int[] { 10, 0, 0, 0 });
 			// 
 			// button_submitZaznam
 			// 
 			button_submitZaznam.Location = new Point(48, 144);
 			button_submitZaznam.Name = "button_submitZaznam";
 			button_submitZaznam.Size = new Size(120, 23);
-			button_submitZaznam.TabIndex = 4;
+			button_submitZaznam.TabIndex = 40;
 			button_submitZaznam.Text = "přidat zaznam";
 			button_submitZaznam.UseVisualStyleBackColor = true;
 			button_submitZaznam.Click += button_submitZaznam_Click;
@@ -78,7 +78,7 @@
 			button_submitRace.Location = new Point(48, 176);
 			button_submitRace.Name = "button_submitRace";
 			button_submitRace.Size = new Size(120, 23);
-			button_submitRace.TabIndex = 5;
+			button_submitRace.TabIndex = 50;
 			button_submitRace.Text = "dokoncit zavod";
 			button_submitRace.UseVisualStyleBackColor = true;
 			button_submitRace.Click += button_submitRace_Click;
@@ -88,17 +88,17 @@
 			button1_finishCup.Location = new Point(48, 208);
 			button1_finishCup.Name = "button1_finishCup";
 			button1_finishCup.Size = new Size(120, 23);
-			button1_finishCup.TabIndex = 6;
+			button1_finishCup.TabIndex = 60;
 			button1_finishCup.Text = "dokoncit cup";
 			button1_finishCup.UseVisualStyleBackColor = true;
 			button1_finishCup.Click += button1_finishCup_Click;
 			// 
 			// button_newCup
 			// 
-			button_newCup.Location = new Point(48, 312);
+			button_newCup.Location = new Point(48, 384);
 			button_newCup.Name = "button_newCup";
 			button_newCup.Size = new Size(120, 23);
-			button_newCup.TabIndex = 7;
+			button_newCup.TabIndex = 100;
 			button_newCup.Text = "novy cup";
 			button_newCup.UseVisualStyleBackColor = true;
 			button_newCup.Click += button_newCup_Click;
@@ -109,8 +109,9 @@
 			label_zavodCount.Location = new Point(16, 8);
 			label_zavodCount.Name = "label_zavodCount";
 			label_zavodCount.Size = new Size(85, 15);
-			label_zavodCount.TabIndex = 8;
+			label_zavodCount.TabIndex = 1002;
 			label_zavodCount.Text = "zavod cislo: ##";
+			label_zavodCount.DoubleClick += label_zavodCount_Click;
 			// 
 			// label_final
 			// 
@@ -120,7 +121,7 @@
 			label_final.Location = new Point(208, 8);
 			label_final.Name = "label_final";
 			label_final.Size = new Size(147, 15);
-			label_final.TabIndex = 9;
+			label_final.TabIndex = 1000;
 			label_final.Text = "zadejte finalni pozice cupu";
 			// 
 			// label_cupCount
@@ -129,27 +130,28 @@
 			label_cupCount.Location = new Point(112, 8);
 			label_cupCount.Name = "label_cupCount";
 			label_cupCount.Size = new Size(74, 15);
-			label_cupCount.TabIndex = 10;
+			label_cupCount.TabIndex = 1001;
 			label_cupCount.Text = "cup cislo: ##";
+			label_cupCount.DoubleClick += label_cupCount_Click;
 			// 
 			// numericUpDown_cc
 			// 
 			numericUpDown_cc.Increment = new decimal(new int[] { 50, 0, 0, 0 });
-			numericUpDown_cc.Location = new Point(48, 280);
+			numericUpDown_cc.Location = new Point(48, 352);
 			numericUpDown_cc.Maximum = new decimal(new int[] { 200, 0, 0, 0 });
 			numericUpDown_cc.Minimum = new decimal(new int[] { 50, 0, 0, 0 });
 			numericUpDown_cc.Name = "numericUpDown_cc";
 			numericUpDown_cc.Size = new Size(120, 23);
-			numericUpDown_cc.TabIndex = 11;
+			numericUpDown_cc.TabIndex = 90;
 			numericUpDown_cc.Value = new decimal(new int[] { 150, 0, 0, 0 });
 			// 
 			// checkBox_mirror
 			// 
 			checkBox_mirror.AutoSize = true;
-			checkBox_mirror.Location = new Point(48, 256);
+			checkBox_mirror.Location = new Point(48, 328);
 			checkBox_mirror.Name = "checkBox_mirror";
 			checkBox_mirror.Size = new Size(98, 19);
-			checkBox_mirror.TabIndex = 12;
+			checkBox_mirror.TabIndex = 80;
 			checkBox_mirror.Text = "mirror zapnut";
 			checkBox_mirror.UseVisualStyleBackColor = true;
 			// 
@@ -162,32 +164,34 @@
 			comboBox_trat.Location = new Point(24, 80);
 			comboBox_trat.Name = "comboBox_trat";
 			comboBox_trat.Size = new Size(160, 23);
-			comboBox_trat.TabIndex = 13;
+			comboBox_trat.TabIndex = 20;
 			// 
 			// textBox_pridatZavodnika
 			// 
-			textBox_pridatZavodnika.Location = new Point(248, 385);
+			textBox_pridatZavodnika.Location = new Point(200, 384);
 			textBox_pridatZavodnika.Name = "textBox_pridatZavodnika";
 			textBox_pridatZavodnika.PlaceholderText = "Přidat závodnika";
 			textBox_pridatZavodnika.Size = new Size(112, 23);
-			textBox_pridatZavodnika.TabIndex = 15;
+			textBox_pridatZavodnika.TabIndex = 110;
 			textBox_pridatZavodnika.KeyPress += textBox_pridatZavodnika_KeyPress;
 			// 
 			// comboBox_vybiracTrate
 			// 
+			comboBox_vybiracTrate.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+			comboBox_vybiracTrate.AutoCompleteSource = AutoCompleteSource.ListItems;
 			comboBox_vybiracTrate.FormattingEnabled = true;
 			comboBox_vybiracTrate.Location = new Point(24, 112);
 			comboBox_vybiracTrate.Name = "comboBox_vybiracTrate";
 			comboBox_vybiracTrate.Size = new Size(160, 23);
-			comboBox_vybiracTrate.TabIndex = 16;
+			comboBox_vybiracTrate.TabIndex = 30;
 			// 
 			// button1
 			// 
 			button1.Font = new Font("Comic Sans MS", 11.25F, FontStyle.Bold | FontStyle.Italic, GraphicsUnit.Point, 0);
-			button1.Location = new Point(48, 376);
+			button1.Location = new Point(48, 256);
 			button1.Name = "button1";
 			button1.Size = new Size(120, 48);
-			button1.TabIndex = 17;
+			button1.TabIndex = 70;
 			button1.Text = "OCR MAGIC";
 			button1.UseVisualStyleBackColor = true;
 			button1.Click += button1_Click;
@@ -195,10 +199,10 @@
 			// checkBox_isBot
 			// 
 			checkBox_isBot.AutoSize = true;
-			checkBox_isBot.Location = new Point(200, 388);
+			checkBox_isBot.Location = new Point(320, 384);
 			checkBox_isBot.Name = "checkBox_isBot";
 			checkBox_isBot.Size = new Size(44, 19);
-			checkBox_isBot.TabIndex = 18;
+			checkBox_isBot.TabIndex = 120;
 			checkBox_isBot.Text = "bot";
 			checkBox_isBot.UseVisualStyleBackColor = true;
 			// 
@@ -209,7 +213,7 @@
 			listBox1.Location = new Point(200, 32);
 			listBox1.Name = "listBox1";
 			listBox1.Size = new Size(160, 349);
-			listBox1.TabIndex = 14;
+			listBox1.TabIndex = 130;
 			// 
 			// Form1
 			// 

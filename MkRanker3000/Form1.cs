@@ -114,6 +114,8 @@ namespace MKRanker3000 {
 				zaznam.zprava = parts[0];
 				zaznam.casZaznamu = DateTime.Parse(parts[1]);
 
+				//I am a fuckin idiot, I forgot this line
+				zaznam.zavodnik = parts[2];
 
 				zaznam.cc = int.Parse(parts[3]);
 				zaznam.mirrorOn = bool.Parse(parts[4]);
@@ -172,6 +174,27 @@ namespace MKRanker3000 {
 			else {
 				System.Media.SystemSounds.Beep.Play();
 			}
+		}
+
+		private void label_zavodCount_Click(object sender, EventArgs e) {
+			actualniZavod = ShowNumberDialog(1, 99);
+			label_zavodCount.Text = "zavod cislo: " + actualniZavod;
+		}
+		private void label_cupCount_Click(object sender, EventArgs e) {
+			actualniCup = ShowNumberDialog(1, 99);
+			label_cupCount.Text = "cup cislo: " + actualniCup;
+		}
+		private int ShowNumberDialog(int min, int max) {
+			Form numForm = new Form();
+			numForm.Text = "Zadej cislo";
+			numForm.Size = new Size(200, 100);
+			NumericUpDown num = new NumericUpDown();
+			num.Minimum = min;
+			num.Maximum = max;
+			numForm.Controls.Add(num);
+			num.Dock = DockStyle.Fill;
+			numForm.ShowDialog();
+			return (int)num.Value;
 		}
 	}
 }

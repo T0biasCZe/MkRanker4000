@@ -97,6 +97,7 @@ namespace MkRenderer2 {
 				karticka.Replace("{POCET_ZAVODU}", zavodnik.pocetUjetychZavodu.ToString());
 				karticka.Replace("{PRUMERNA_POZICE}", zavodnik.prumernePoradi.ToString("0.0"));
 				karticka.Replace("{MEDIAN_POZICE}", zavodnik.medianPoradi.ToString());
+				karticka.Replace("{VAZENY_MEDIAN_POZICE}", zavodnik.vazeneMedianPoradi.ToString());
 				karticka.Replace("{POCET_DNU}", zavodnik.pocetUjetychDnu.ToString());
 				if(!total) {
 					string vybraneTrateTemplate = "<div class=\"Trat\">Vybrané tratě:<br>{TRAT}</div>";
@@ -121,10 +122,15 @@ namespace MkRenderer2 {
 			return karticky.ToString();
 		}
 
-		public static string zpracovatFinalIndex(string dirname) {
+		public static string zpracovatFinalIndex(string dirname, int width, int height) {
 			string directory = @".\out\" + dirname + @"\";
 
 			StringBuilder finalIndex = new StringBuilder(File.ReadAllText(@".\out\index_template.html"));
+
+			
+			finalIndex.Replace("GRAFWIDTH", width.ToString());
+			finalIndex.Replace("GRAFHEIGHT", height.ToString());
+
 			finalIndex.Replace("{KARTICKY}", File.ReadAllText(directory + @"\karticky.html"));
 			finalIndex.Replace("{TABULKY}", File.ReadAllText(directory + @"\table.html"));
 			finalIndex.Replace("{NAZEV_ZAZNAMU}", dirname);
@@ -158,6 +164,8 @@ namespace MkRenderer2 {
 			renderGraphDistribuce(zavodnici_total, false, "./out/racisti/");
 
 			karticky_total.Replace("{KARTICKY}", karticky);
+
+			renderDlouhodobyGraf(zavodnici_total).Save("./out/dlouhodobygraf.png");
 
 			File.WriteAllText($@".\out\racisti\index.php", karticky_total.ToString());
 		}

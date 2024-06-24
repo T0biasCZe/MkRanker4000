@@ -32,16 +32,18 @@ namespace MkRenderer2 {
 			public string trat; //name of current track
 			public string vybiracTrate = ""; //person who picked this track
 			public List<Tuple<Zavodnik, int>> zavodnici = new List<Tuple<Zavodnik, int>>(); //pair of zavodnik and their position in this race
+			public int pocetZavodniku = 0;
+			public int pocetBotu = 0;
 		}
 		private static Dictionary<string, Color> nicknameColors = new Dictionary<string, Color> {
-			{ "TheStoupa", Color.Purple },
+			{ "Stoupa", Color.Purple },
 			{ "John Beak", Color.Cyan },
-			{ "T0biasCZe", Color.Lime},
+			{ "Tobik", Color.Lime},
 			{ "lilibox", Color.Sienna },
 			{ "BeNiSh", Color.Yellow },
 			{ "Mates", Color.FromArgb(255, 223, 197, 254) },
 			{ "Tom", Color.OrangeRed },
-			{ "Cwrcekk", Color.DarkGreen },
+			{ "Cvrcek", Color.DarkGreen },
 			{ "Boun", Color.DarkGray },
 			{ "Swatty", Color.Salmon },
 		};
@@ -121,6 +123,13 @@ namespace MkRenderer2 {
 					zavody.Add(zavod_);
 				}
 				zavod_.zavodnici.Add(new Tuple<Zavodnik, int>(zavodnik, zaznam.poradi));
+
+				if(zaznam.isBot == true) {
+					zavod_.pocetBotu++;
+				}
+				else{
+					zavod_.pocetZavodniku++;
+				}
 			}
 
 			//writeline all the zavods and their zavodnici pairs for debugging
@@ -159,6 +168,13 @@ namespace MkRenderer2 {
 					}
 				}
 				zavodnik.pocetDojetiNaIndexu = pocetDojetiNaIndexu;
+			}
+			foreach(Zavod zavod_ in zavody) {
+				//take position of each zavodnik in this zavod and weight in percentage which is how many real racers were there compared to bots. lets assume there are always 12 racers, so bot count is 12 - pocetZavodniku
+				foreach(Tuple<Zavodnik, int> zavodnik in zavod_.zavodnici) {
+					int weight = 100 * zavod_.pocetZavodniku / 12;
+					zavodnik.Item1.poziceSWeight.Add(new Tuple<int, int>(zavodnik.Item2, weight));
+				}
 			}
 
 			foreach(Zavodnik zavodnik in zavodnici) {
@@ -252,11 +268,126 @@ namespace MkRenderer2 {
 
 			return bitmap;
 		}
+		public static Bitmap renderDlouhodobyGraf(List<Zavodnik> zavodnici) {
+			List<string> dates = new List<string>();
+			foreach(Zavodnik zavodnik in zavodnici) {
+				foreach(Tuple<string, double> median in zavodnik.medianyVPrubehuCasu) {
+					if(!dates.Contains(median.Item1)) {
+						dates.Add(median.Item1);
+					}
+				}
+			}
+			dates.Sort();
+			int pocetDni = dates.Count;
+
+			int vyskaBitmapy = 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA + 80;
+			int sirkaBitmapy = pocetDni * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA; 
+
+			Bitmap bitmap = new Bitmap(sirkaBitmapy, vyskaBitmapy);
+			Graphics graphics = Graphics.FromImage(bitmap);
+			graphics.SmoothingMode = SmoothingMode.HighQuality;
+			graphics.TextRenderingHint = trh;
+			StringFormat strignFormat = new StringFormat();
+			strignFormat.FormatFlags = StringFormatFlags.DirectionVertical;
+
+
+
+			//draw the axis
+			graphics.DrawLine(new Pen(BARVA_CAR), OFFSET_ZLEVA, OFFSET_ZHORA, OFFSET_ZLEVA, 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA);
+			graphics.DrawLine(new Pen(BARVA_CAR), OFFSET_ZLEVA, 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA, pocetDni * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA);
+
+			//draw value at top of the axis
+			graphics.DrawString("1", new Font("Arial", 8), new SolidBrush(BARVA_TEXTU), 0, 5  + OFFSET_ZHORA);
+
+			//draw names diagonally on the horizontal axis
+
+			for(int i = 0; i < pocetDni; i++) {
+				graphics.DrawString(dates[i], new Font("Arial", 8), new SolidBrush(BARVA_TEXTU), i * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA - 6, 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA, strignFormat);
+			}
+			int previousPoint = -99;
+			int previousId = -99;
+			List<Tuple<string, int>> alreadyRenderedValues = new List<Tuple<string, int>>();
+
+			for(int i = 1; i <= 12; i++) {
+				int y = i * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA;
+				graphics.DrawLine(new Pen(BARVA_CAR), OFFSET_ZLEVA, y, OFFSET_ZLEVA + 1, y);
+			}
+
+			foreach(Zavodnik zavodnik in zavodnici) {
+				if(zavodnik.isBot) continue;
+				for(int i = 0; i < zavodnik.medianyVPrubehuCasu.Count; i++) {
+					int id = dates.IndexOf(zavodnik.medianyVPrubehuCasu[i].Item1);
+					if(id == -1) continue;
+
+					int currentValue = (int)zavodnik.medianyVPrubehuCasu[i].Item2;
+					//check list if there is entry for this value at this date
+					if(!alreadyRenderedValues.Contains(new Tuple<string, int>(dates[id], currentValue))) {
+						graphics.FillEllipse(new SolidBrush(zavodnik.barva), id * _SIRKA_JEDNE_JEDNOTKY - 4 + OFFSET_ZLEVA, currentValue * _VYSKA_JEDNE_JEDNOTKY - 4 + OFFSET_ZHORA, 9, 9);
+					}
+
+
+
+
+					graphics.DrawEllipse(new Pen(zavodnik.barva, 2), id * _SIRKA_JEDNE_JEDNOTKY - 3 + OFFSET_ZLEVA, currentValue * _VYSKA_JEDNE_JEDNOTKY - 3 + OFFSET_ZHORA, 7, 7);
+
+					//check if this racer had the same value at previous date, and at the same time, some other racer has the same value today and also at the previous date. if yes, draw only dotted line instead of full line (so it dithers between the two racer's colours)
+
+
+					if(previousId + 1 == id) {
+						bool notDrawn = true;
+
+						//foreach zavodnik, check if some zavodnik today has the same value as this, and at the same time, has same value yesterday as this zavodnik, and at the same time, this zavodnik has the same value today as yesterday
+						if(alreadyRenderedValues.Contains(new Tuple<string, int>(dates[id], currentValue))) {
+							foreach(Zavodnik zavodnik_ in zavodnici) {
+								if(zavodnik_ == zavodnik) continue;
+								for(int j = 0; j < zavodnik_.medianyVPrubehuCasu.Count; j++) {
+									if(dates.IndexOf(zavodnik_.medianyVPrubehuCasu[j].Item1) == id && zavodnik_.medianyVPrubehuCasu[j].Item2 == currentValue) {
+										for(int k = 0; k < zavodnik_.medianyVPrubehuCasu.Count; k++) {
+											if(dates.IndexOf(zavodnik_.medianyVPrubehuCasu[k].Item1) == id - 1 && zavodnik_.medianyVPrubehuCasu[k].Item2 == previousPoint) {
+												for(int l = 0; l < zavodnik.medianyVPrubehuCasu.Count; l++) {
+													if(dates.IndexOf(zavodnik.medianyVPrubehuCasu[l].Item1) == id - 1 && zavodnik.medianyVPrubehuCasu[l].Item2 == previousPoint) {
+														var oldSmoothMode = graphics.SmoothingMode;
+														graphics.SmoothingMode = SmoothingMode.None;
+
+														graphics.DrawLine(new Pen(zavodnik.barva, 1) { DashStyle = DashStyle.Dash }, (id - 1) * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, previousPoint * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA, id * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, currentValue * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA);
+														graphics.SmoothingMode = oldSmoothMode;
+														Console.WriteLine("dotted line drawn");
+														notDrawn = false;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						if(notDrawn){
+						graphics.DrawLine(new Pen(zavodnik.barva),
+							(id - 1) * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, previousPoint * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA,
+							id * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, currentValue * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA
+						);
+						}
+					}
+					previousPoint = currentValue;
+					previousId = id;
+
+					//add this value with date to the list of already rendered values
+					alreadyRenderedValues.Add(new Tuple<string, int>(dates[id], currentValue));
+				}
+
+
+				previousPoint = -99;
+				previousId = -99;
+			}
+
+			return bitmap;
+		}
 
 		public static void renderGraphDistribuce(List<Zavodnik> zavodnici, bool dark, string directory) {
 			Random random = new Random();
 
 			foreach(Zavodnik zavodnik in zavodnici) {
+				if(zavodnik.isBot) continue;
 				Bitmap bitmapa = new Bitmap(300, 200);
 				Graphics graphics = Graphics.FromImage(bitmapa);
 				graphics.SmoothingMode = SmoothingMode.HighQuality;
@@ -301,11 +432,16 @@ namespace MkRenderer2 {
 				trh = TextRenderingHint.AntiAlias;
 				Bitmap bm = renderGraphPozice(zavody, zavodnici, z.nick, true, false);
 				bm.Save(dirname + z.nick + "/prubeh.png");
+				bm = renderGraphPozice(zavody, zavodnici, z.nick, false, false);
+				bm.Save(dirname + z.nick + "/prubeh_fullsize.png");
 				BARVA_TEXTU = Color.White;
 
 				trh = TextRenderingHint.ClearTypeGridFit;
 				bm = renderGraphPozice(zavody, zavodnici, z.nick, true, false);
 				bm.Save(dirname + z.nick + "/prubeh_dark.png");
+				
+				bm = renderGraphPozice(zavody, zavodnici, z.nick, false, false);
+				bm.Save(dirname + z.nick + "/prubeh_dark_fullsize.png");
 			}
 
 			renderGraphDistribuce(zavodnici, true, dirname);
@@ -318,5 +454,15 @@ namespace MkRenderer2 {
 
 	public static class HexColorExtensions {
 		public static string ToHex(this Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+	}
+	public static class BitmapExtensions {
+		public static bool useAsync = true;
+		public static void SaveAsync(this Bitmap bitmap, string path) {
+			if(useAsync) {
+				Task.Run(() => bitmap.Save(path));
+				return;
+			}
+			bitmap.Save(path);
+		}
 	}
 }

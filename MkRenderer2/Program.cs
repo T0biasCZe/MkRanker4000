@@ -15,6 +15,7 @@ namespace MkRenderer2 {
 			var files = Directory.GetFiles(".\\in");
 
 			foreach(string file in files) {
+				if(file.EndsWith(".csv") == false) continue;
 				Console.WriteLine("Processing file " + file);
 				string filename = Path.GetFileNameWithoutExtension(file);
 
@@ -47,7 +48,7 @@ namespace MkRenderer2 {
 
 				//Hatlamatla.zpracovatFinalIndex();
 
-				File.WriteAllText(@$".\out\{filename}\index.php", Hatlamatla.zpracovatFinalIndex(filename));
+				File.WriteAllText(@$".\out\{filename}\index.php", Hatlamatla.zpracovatFinalIndex(filename, bm.Width, bm.Height));
 
 				/*
 				Bitmap bitmapa = new Bitmap(200, 100);
@@ -68,6 +69,10 @@ namespace MkRenderer2 {
 				foreach(Zavodnik zavodnik in zavodnici) {
 					Zavodnik zavodnik_total = zavodnici_total.Find(z => z.nick == zavodnik.nick);
 					if(zavodnik_total == null) {
+						zavodnik.RecalcPos();
+
+						zavodnik.medianyVPrubehuCasu.Add(new Tuple<string, double>(filename, zavodnik.vazeneMedianPoradi));
+
 						zavodnici_total.Add(zavodnik);
 						zavodnik.pocetUjetychDnu = 1;
 					} else {
@@ -76,7 +81,6 @@ namespace MkRenderer2 {
 						}
 						zavodnik_total.pocetUjetychZavodu += zavodnik.pocetUjetychZavodu;
 
-						zavodnik_total.RecalcPos();
 						zavodnik_total.pocetUjetychDnu += 1;
 
 						foreach(Trat t in zavodnik.vybraneTrate) {
@@ -84,6 +88,10 @@ namespace MkRenderer2 {
 								zavodnik_total.PridatTrat(t.nazev);
 							}
 						}
+
+						zavodnik_total.RecalcPos();
+
+						zavodnik_total.medianyVPrubehuCasu.Add(new Tuple<string, double>(filename, zavodnik.vazeneMedianPoradi));
 					}
 				}
 
@@ -97,11 +105,19 @@ namespace MkRenderer2 {
 				sw.Close();
 
 			}
+			/*save colour with jmena to barvy.txt with format "#RRGGBB;Nick"*/
+			StreamWriter sww = new StreamWriter($".\\out\\barvy.txt");
+			for(int i = 0; i < zavodnici_total.Count; i++) {
+				if(zavodnici_total[i].isBot) continue;
+				sww.WriteLine(zavodnici_total[i].barva.ToHex() + ";" + zavodnici_total[i].nick);
+			}
+			sww.Flush();
+			sww.Close();
+
 			Hatlamatla.zpracovatOverallKartickyZavodniku(zavodnici_total);
 
 		}
 		static Dictionary<string, string> stareNazvyNaNově = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
-			{"Mates", "Mates<>"},
 			{"TheStoupa", "Stoupa"},
 			{"Cwrcekk", "Cvrcek"},
 			{"T0biasCZe", "Tobik"},
@@ -143,6 +159,7 @@ namespace MkRenderer2 {
 
 					if(parts.Length > 10) {
 						zaznam.isBot = bool.Parse(parts[10]);
+						//continue;
 					}
 				}
 				zaznamy.Add(zaznam);

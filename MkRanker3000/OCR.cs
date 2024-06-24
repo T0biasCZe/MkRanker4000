@@ -90,6 +90,8 @@ namespace MkRanker3000 {
 			MEDIUM = 1,
 			HIGH = 0,
 		}
+		List<string> potentiallyBadRecognisions = new List<string> { "Tom", "Wario", "Mario", "Mates", "Mates1500"};
+		List<string> surelyBadRecognisions = new List<string> { "N/A", "NUL", ""};
 		private void ZpracovatZaznamy(Bitmap bitmap, string filepath) {
 			SetData(radioButton2.Checked);
 
@@ -240,6 +242,15 @@ namespace MkRanker3000 {
 					else if(racer_confidence == confidence.MEDIUM) {
 						dataGridView1.Rows[i].Cells[3].Style.BackColor = Color.Yellow;
 					}
+
+					//highlight the name row if the name is in the list of potentially bad recognisions
+					if(potentiallyBadRecognisions.Contains(closest)) {
+						dataGridView1.Rows[i].Cells[4].Style.BackColor = Color.Yellow;
+					}
+					if(surelyBadRecognisions.Contains(racer) || surelyBadRecognisions.Contains(closest)) {
+						dataGridView1.Rows[i].Cells[4].Style.BackColor = Color.Red;
+					}
+
 				}
 				g.Dispose();
 				label1.Text = "Saving mask...";

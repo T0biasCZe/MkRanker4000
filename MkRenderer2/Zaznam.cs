@@ -33,6 +33,11 @@ public class Zavodnik {
 	public float prumernePoradi;
 	public float medianPoradi;
 	public int[] pocetDojetiNaIndexu = new int[12];
+
+	public double vazeneMedianPoradi;
+	public List<Tuple<int, int>> poziceSWeight = new List<Tuple<int, int>>();
+	public List<Tuple<string, double>> medianyVPrubehuCasu = new List<Tuple<string, double>>();
+
 	public int pocetUjetychDnu;
 	public bool isBot;
 	public List<Trat> vybraneTrate = new List<Trat>();
@@ -57,6 +62,8 @@ public class Zavodnik {
 				break;
 			}
 		}
+
+		vazeneMedianPoradi = QuikMefs.CalculateWeightedMedian(poziceSWeight);
 	}
 	public void PridatTrat(string nazevTrate) {
 		//if trat is already in list, increase the kolikratVybrano, else add it as new and set kolikratVybrano to 1
@@ -67,5 +74,27 @@ public class Zavodnik {
 		else {
 			vybraneTrate.Add(new Trat() { nazev = nazevTrate, kolikratVybrano = 1 });
 		}
+	}
+}
+
+public static class QuikMefs {
+	public static double CalculateWeightedMedian(List<Tuple<int, int>> numbersWithWeights) {
+		// Step 1: Sort the list by the numbers
+		var sortedList = numbersWithWeights.OrderBy(x => x.Item1).ToList();
+
+		// Step 2: Calculate the total weight
+		int totalWeight = sortedList.Sum(x => x.Item2);
+
+		// Step 3: Find the weighted median
+		int cumulativeWeight = 0;
+		foreach(var pair in sortedList) {
+			cumulativeWeight += pair.Item2;
+			if(cumulativeWeight >= totalWeight / 2.0) {
+				return pair.Item1;
+			}
+		}
+
+		// If the list is empty or there's an error, return 0 or throw an exception
+		throw new InvalidOperationException("Cannot calculate the weighted median of an empty list.");
 	}
 }

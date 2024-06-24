@@ -254,6 +254,7 @@
 			// 
 			player.HeaderText = "závodník";
 			player.Name = "player";
+			player.Visible = false;
 			// 
 			// zavodnik_combobox
 			// 
