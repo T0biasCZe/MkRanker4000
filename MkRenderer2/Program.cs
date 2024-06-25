@@ -1,4 +1,5 @@
 ﻿
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
@@ -13,6 +14,9 @@ namespace MkRenderer2 {
 
 			//for each file in folder .\in
 			var files = Directory.GetFiles(".\\in");
+
+			Stopwatch stw = new Stopwatch();
+			stw.Start();
 
 			foreach(string file in files) {
 				if(file.EndsWith(".csv") == false) continue;
@@ -32,11 +36,11 @@ namespace MkRenderer2 {
 				Render.BARVA_TEXTU = Color.Black;
 				Render.trh = TextRenderingHint.AntiAlias;
 				Bitmap bm = Render.renderGraphPozice(zavody, zavodnici, "", false, false);
-				bm.Save(@$".\out\{filename}\grafy\graf_all.png");
+				bm.SaveAsync(@$".\out\{filename}\grafy\graf_all.png");
 				Render.BARVA_TEXTU = Color.White;
 				Render.trh = TextRenderingHint.ClearTypeGridFit;
 				bm = Render.renderGraphPozice(zavody, zavodnici, "", false, false);
-				bm.Save($@".\out\{filename}\grafy\graf_all_dark.png");
+				bm.SaveAsync($@".\out\{filename}\grafy\graf_all_dark.png");
 
 				//Console.WriteLine("bitmapa zapsana do cele cesty " + Path.GetFullPath("output.png"));
 
@@ -116,6 +120,9 @@ namespace MkRenderer2 {
 
 			Hatlamatla.zpracovatOverallKartickyZavodniku(zavodnici_total);
 
+			stw.Stop();
+			Console.WriteLine("Celkovy cas: " + stw.ElapsedMilliseconds + "ms");
+
 		}
 		static Dictionary<string, string> stareNazvyNaNově = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
 			{"TheStoupa", "Stoupa"},
@@ -157,14 +164,22 @@ namespace MkRenderer2 {
 					else zaznam.vybiracTrate = vybiracTrate;
 					Console.WriteLine("trat vybrana hračem " + zaznam.vybiracTrate);
 
-					if(parts.Length > 10) {
+					/*if(parts.Length > 10) {
 						zaznam.isBot = bool.Parse(parts[10]);
 						//continue;
-					}
+					}*/
+					zaznam.isBot = isBot(zaznam.zavodnik);
+
 				}
+				//for now its easier to just ignore bots (future me problem)
+				if(zaznam.isBot) continue;
 				zaznamy.Add(zaznam);
 			}
 			return zaznamy;
+		}
+		static List<string> botsList = new List<string> { "Mario", "Metal Mario", "Gold Mario", "Luigi", "Peach", "Daisy", "Rosalina", "Tanooki Mario", "Cat Peach", "Yoshi", "Toad", "Koopa Troopa", "Shy Guy", "Lakitu", "Toadette", "King Boo", "Baby Mario", "Baby Luigi", "Baby Peach", "Baby Daisy", "Baby Rosalina", "Pink Gold Peach", "Wario", "Waluigi", "Donkey Kong", "Bowser", "Dry Bones", "Bowser Jr.", "Dry Bowser", "Lemmy", "Larry", "Wendy", "Ludwig", "Iggy", "Roy", "Morton", "Inkling Girl", "Inkling Boy", "Link", "Villager", "Isabelle", "Birdo", "Petey Piranha", "Wiggler", "Kamek", "Peachette", "Funky Kong", "Diddy Kong", "Pauline" };
+		public static bool isBot(string nick) {
+			return botsList.Contains(nick);
 		}
 	}
 }

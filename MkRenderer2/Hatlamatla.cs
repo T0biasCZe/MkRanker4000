@@ -165,7 +165,7 @@ namespace MkRenderer2 {
 
 			karticky_total.Replace("{KARTICKY}", karticky);
 
-			renderDlouhodobyGraf(zavodnici_total).Save("./out/dlouhodobygraf.png");
+			renderDlouhodobyGraf(zavodnici_total).SaveAsync("./out/dlouhodobygraf.png");
 
 			File.WriteAllText($@".\out\racisti\index.php", karticky_total.ToString());
 		}

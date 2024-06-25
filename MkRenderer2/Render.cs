@@ -418,7 +418,7 @@ namespace MkRenderer2 {
 				//bitmapa.Save("./out/grafy/" + zavodnik.nick + (dark ? "/distribuce_dark.png" : "/distribuce.png"));
 				string filepath = directory + zavodnik.nick + (dark ? "/distribuce_dark.png" : "/distribuce.png");
 				Console.WriteLine("saving graph distribuce to " + filepath);
-				bitmapa.Save(directory + zavodnik.nick + (dark ? "/distribuce_dark.png" : "/distribuce.png"));
+				bitmapa.SaveAsync(directory + zavodnik.nick + (dark ? "/distribuce_dark.png" : "/distribuce.png"));
 			}
 		}
 		public static void vyrenderovatKarticky(List<Zavod> zavody, List<Zavodnik> zavodnici, string dirname) {
@@ -431,17 +431,17 @@ namespace MkRenderer2 {
 				BARVA_TEXTU = Color.Black;
 				trh = TextRenderingHint.AntiAlias;
 				Bitmap bm = renderGraphPozice(zavody, zavodnici, z.nick, true, false);
-				bm.Save(dirname + z.nick + "/prubeh.png");
+				bm.SaveAsync(dirname + z.nick + "/prubeh.png");
 				bm = renderGraphPozice(zavody, zavodnici, z.nick, false, false);
-				bm.Save(dirname + z.nick + "/prubeh_fullsize.png");
+				bm.SaveAsync(dirname + z.nick + "/prubeh_fullsize.png");
 				BARVA_TEXTU = Color.White;
 
 				trh = TextRenderingHint.ClearTypeGridFit;
 				bm = renderGraphPozice(zavody, zavodnici, z.nick, true, false);
-				bm.Save(dirname + z.nick + "/prubeh_dark.png");
+				bm.SaveAsync(dirname + z.nick + "/prubeh_dark.png");
 				
 				bm = renderGraphPozice(zavody, zavodnici, z.nick, false, false);
-				bm.Save(dirname + z.nick + "/prubeh_dark_fullsize.png");
+				bm.SaveAsync(dirname + z.nick + "/prubeh_dark_fullsize.png");
 			}
 
 			renderGraphDistribuce(zavodnici, true, dirname);
@@ -456,13 +456,8 @@ namespace MkRenderer2 {
 		public static string ToHex(this Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 	}
 	public static class BitmapExtensions {
-		public static bool useAsync = true;
 		public static void SaveAsync(this Bitmap bitmap, string path) {
-			if(useAsync) {
-				Task.Run(() => bitmap.Save(path));
-				return;
-			}
-			bitmap.Save(path);
+			Task.Run(() => bitmap.Save(path));
 		}
 	}
 }

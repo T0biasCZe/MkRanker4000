@@ -125,6 +125,9 @@ namespace MKRanker3000 {
 				zaznam.trat = parts[8];
 				if(parts.Length > 9) {
 					zaznam.vybiracTrate = parts[9];
+					if( parts.Length > 10) {
+						zaznam.isBot = bool.Parse(parts[10]);
+					}
 
 				}
 				zaznamy.Add(zaznam);
