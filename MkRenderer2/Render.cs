@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
@@ -35,19 +36,8 @@ namespace MkRenderer2 {
 			public int pocetZavodniku = 0;
 			public int pocetBotu = 0;
 		}
-		private static Dictionary<string, Color> nicknameColors = new Dictionary<string, Color> {
-			{ "Stoupa", Color.Purple },
-			{ "John Beak", Color.Cyan },
-			{ "Tobik", Color.Lime},
-			{ "lilibox", Color.Sienna },
-			{ "BeNiSh", Color.Yellow },
-			{ "Mates", Color.FromArgb(255, 223, 197, 254) },
-			{ "Tom", Color.OrangeRed },
-			{ "Cvrcek", Color.DarkGreen },
-			{ "Boun", Color.DarkGray },
-			{ "Swatty", Color.Salmon },
-		};
-		public static void zpracovatZaznamy(List<Zaznam> zaznamy, out List<Zavod> zavody, out List<Zavodnik> zavodnici) {
+		public static Trate trate = new Trate();
+		public static void zpracovatZaznamy(List<Zaznam> zaznamy, out List<Zavod> zavody, out List<Zavodnik> zavodnici, out int pocetUnikatnichZavodnikuOut, out int maximalniPocetZavodnikuOut, out int minimalniPocetZavodnikuOut, out float medianPocetZavodnikuOut, out int ujetyPocetZavoduOut) {
 			zavodnici = new List<Zavodnik>();
 			zavody = new List<Zavod>();
 			Random random = new Random();
@@ -56,7 +46,7 @@ namespace MkRenderer2 {
 
 			foreach(Zaznam zaznam in zaznamy) {
 				if(zaznam.poradi == 999) {
-					Console.WriteLine("skipping zaznam because its misc log: " + zaznam);
+					//Console.WriteLine("skipping zaznam because its misc log: " + zaznam);
 					continue;
 				}
 				/*if(zaznam.zavod == 99) {
@@ -71,22 +61,36 @@ namespace MkRenderer2 {
 					zavodnik = new Zavodnik();
 					zavodnik.nick = zaznam.zavodnik;
 					zavodnik.isBot = zaznam.isBot;
-					if(nicknameColors.ContainsKey(zavodnik.nick)) {
-						zavodnik.barva = nicknameColors[zavodnik.nick];
+					if(Program.nicknameColors.ContainsKey(zavodnik.nick)) {
+						zavodnik.barva = Program.nicknameColors[zavodnik.nick];
 					}
 					else {
+						Console.WriteLine($"Zavodnik {zavodnik.nick} nema predurcenou barvu");
 						//take random color from the list and check if it's not already taken
 						Color barva = colorList[random.Next(colorList.Count)];
-						while(zavodnici.Any(z => z.barva == barva)) {
+
+						string ansiCode = "";
+						string ansiCodeConflicting = "";
+						//check if any other colour already in dictionary is too similar to this one using Utils.CompareRGB
+						while(Program.nicknameColors.Any(z => Utils.CompareRGB(z.Value, barva) < 80)) {
+							ansiCode = $"\x1b[38;2;{barva.R};{barva.G};{barva.B}m";
+							Color conflictingBarva = Program.nicknameColors.First(z => Utils.CompareRGB(z.Value, barva) < 80).Value;
+							ansiCodeConflicting = $"\x1b[38;2;{conflictingBarva.R};{conflictingBarva.G};{conflictingBarva.B}m";
+							Console.WriteLine($"Barva {ansiCode} {barva.ToKnownColor()}\x1b[0m je moc podobna jako barva {ansiCodeConflicting}{conflictingBarva.ToKnownColor()} \x1b[0m"); // Reset color
+
 							barva = colorList[random.Next(colorList.Count)];
 						}
+
 						zavodnik.barva = barva;
 
-						string ansiCode = $"\x1b[38;2;{barva.R};{barva.G};{barva.B}m";
+						ansiCode = $"\x1b[38;2;{barva.R};{barva.G};{barva.B}m";
 
 						Console.WriteLine($"{ansiCode}Zavodnik {zavodnik.nick} nema predurcenou barvu tak byl vybran {barva.ToKnownColor()} \x1b[0m"); // Reset color
 
 						Console.ResetColor();
+
+						//add the color to the dictionary so it's not random next time
+						//Program.nicknameColors.Add(zavodnik.nick, barva);
 					}
 
 					zavodnici.Add(zavodnik);
@@ -94,14 +98,28 @@ namespace MkRenderer2 {
 				if(zaznam.vybiracTrate.Length > 1) {
 					if(zaznam.zavod == 99) goto escape;
 					string[] vybiraciTrate = zaznam.vybiracTrate.Split(',');
-					foreach(string vybiracTrate in vybiraciTrate) {
+					/*foreach(string vybiracTrate in vybiraciTrate) {
 						if(vybiracTrate.Trim().ToLower().Equals(zaznam.zavodnik.Trim().ToLower())) {
+							
 							zavodnik.PridatTrat(zaznam.trat);
 							Console.WriteLine("vybirac trate je zavodnik, pridavam trat " + zaznam.trat + " zavodnikovi " + zaznam.zavodnik);
 						}
+					}*/
+					for(int i = 0; i < vybiraciTrate.Length; i++) {
+						if(vybiraciTrate[i].Trim().ToLower().Equals(zaznam.zavodnik.Trim().ToLower())) {
+							if(i == 0) {
+								zavodnik.PridatTrat(zaznam.trat);
+								Console.WriteLine("vybirac trate je zavodnik, pridavam trat " + zaznam.trat + " zavodnikovi " + zaznam.zavodnik);
+							}
+							else {
+								zavodnik.PridatDruhouTrat(zaznam.trat);
+								Console.WriteLine("vybirac trate je zavodnik, pridavam druhou trat " + zaznam.trat + " zavodnikovi " + zaznam.zavodnik);
+							}
+						}
 					}
+
 				}
-				escape:;
+			escape:;
 				if(cup != zaznam.cup) {
 					cup = zaznam.cup;
 					zavod = 1;
@@ -118,7 +136,7 @@ namespace MkRenderer2 {
 					zavod_.trat = zaznam.trat;
 					zavod_.vybiracTrate = zaznam.vybiracTrate;
 					if(zaznam.vybiracTrate.Length < 1) {
-						Console.WriteLine("no vybirac ? :(");
+						//Console.WriteLine("no vybirac ? :(");
 					}
 					zavody.Add(zavod_);
 				}
@@ -127,20 +145,29 @@ namespace MkRenderer2 {
 				if(zaznam.isBot == true) {
 					zavod_.pocetBotu++;
 				}
-				else{
+				else {
 					zavod_.pocetZavodniku++;
 				}
 			}
 
 			//writeline all the zavods and their zavodnici pairs for debugging
-			foreach(Zavod zavod_ in zavody) {
+			/*foreach(Zavod zavod_ in zavody) {
 				Console.WriteLine();
 				Console.WriteLine("Cup " + zavod_.cup + " Zavod " + zavod_.zavod);
 				foreach(Tuple<Zavodnik, int> zavodnik in zavod_.zavodnici) {
 					Console.WriteLine(zavodnik.Item1.nick + " " + zavodnik.Item2);
 				}
+			}*/
+			ConsoleColor oldColor = Console.ForegroundColor;
+			Console.ForegroundColor = ConsoleColor.Red;
+			foreach(Zavod zavod_ in zavody) {
+				if(zavod_.zavod == 99) continue; //skip final results of each cup
+				trate.PridatTrat(zavod_.trat);
 			}
-
+			trate.Seradit();
+			Console.WriteLine("Trate:");
+			Console.WriteLine(trate.VypsatTrate());
+			Console.ForegroundColor = oldColor;
 			//calculate how many times each zavodnik finished race, but dont count zavod == 99
 			foreach(Zavodnik zavodnik in zavodnici) {
 				int pocetDojeti = 0;
@@ -161,6 +188,7 @@ namespace MkRenderer2 {
 			foreach(Zavodnik zavodnik in zavodnici) {
 				int[] pocetDojetiNaIndexu = new int[MAX_POCET_ZAVODNIKU];
 				foreach(Zavod zavod_ in zavody) {
+					if(zavod_.zavod == 99) continue; //skip final results of each cup
 					foreach(Tuple<Zavodnik, int> zavodnik_ in zavod_.zavodnici) {
 						if(zavodnik_.Item1 == zavodnik) {
 							pocetDojetiNaIndexu[zavodnik_.Item2 - 1]++;
@@ -180,13 +208,56 @@ namespace MkRenderer2 {
 			foreach(Zavodnik zavodnik in zavodnici) {
 				zavodnik.RecalcPos();
 			}
+
+
+
+			//process pocet unikatnich zavodniku and maximalni pocet zavodniku naraz
+			pocetUnikatnichZavodnikuOut = 0;
+			maximalniPocetZavodnikuOut = 0;
+			minimalniPocetZavodnikuOut = 999;
+			medianPocetZavodnikuOut = 0;
+			foreach(Zavod zavod_ in zavody) {
+				if(zavod_.zavod == 99) continue; //skip final results of each cup
+				if(zavod_.pocetZavodniku > maximalniPocetZavodnikuOut) {
+					maximalniPocetZavodnikuOut = zavod_.pocetZavodniku;
+				}
+				if(zavod_.pocetZavodniku < minimalniPocetZavodnikuOut) {
+					minimalniPocetZavodnikuOut = zavod_.pocetZavodniku;
+				}
+			}
+			foreach(Zavodnik zavodnik in zavodnici) {
+				if(zavodnik.pocetUjetychZavodu > 0) {
+					pocetUnikatnichZavodnikuOut++;
+				}
+			}
+			//calculate median pocet zavodniku
+			List<int> pocetZavodnikuList = new List<int>();
+			foreach(Zavod zavod_ in zavody) {
+				if(zavod_.zavod == 99) continue; //skip final results of each cup
+				pocetZavodnikuList.Add(zavod_.pocetZavodniku);
+			}
+			pocetZavodnikuList.Sort();
+			if(pocetZavodnikuList.Count % 2 == 0) {
+				medianPocetZavodnikuOut = (pocetZavodnikuList[pocetZavodnikuList.Count / 2] + pocetZavodnikuList[pocetZavodnikuList.Count / 2 - 1]) / 2;
+			}
+			else {
+				medianPocetZavodnikuOut = pocetZavodnikuList[pocetZavodnikuList.Count / 2];
+			}
+
+
+			ujetyPocetZavoduOut = 0;
+			foreach(Zavod zavod_ in zavody) {
+				if(zavod_.zavod < 99) {
+					ujetyPocetZavoduOut++;
+				}
+			}
 		}
 
 
 		public static TextRenderingHint trh;
 		public static Bitmap renderGraphPozice(List<Zavod> zavody, List<Zavodnik> zavodnici, string filter, bool small, bool legenda) {
-			int VYSKA_JEDNE_JEDNOTKY = small ? _VYSKA_JEDNE_JEDNOTKY/2 : _VYSKA_JEDNE_JEDNOTKY;
-			int SIRKA_JEDNE_JEDNOTKY = small ? _SIRKA_JEDNE_JEDNOTKY/2 : _SIRKA_JEDNE_JEDNOTKY;
+			int VYSKA_JEDNE_JEDNOTKY = small ? _VYSKA_JEDNE_JEDNOTKY / 2 : _VYSKA_JEDNE_JEDNOTKY;
+			int SIRKA_JEDNE_JEDNOTKY = small ? _SIRKA_JEDNE_JEDNOTKY / 2 : _SIRKA_JEDNE_JEDNOTKY;
 
 			Random random = new Random();
 
@@ -198,7 +269,7 @@ namespace MkRenderer2 {
 
 			int sirkaBitmapy = pocetZavodu * SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA;
 			if(legenda) sirkaBitmapy += 100;
-			Bitmap bitmap = new Bitmap(sirkaBitmapy, MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY +200);
+			Bitmap bitmap = new Bitmap(sirkaBitmapy, MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY + 200);
 			Graphics graphics = Graphics.FromImage(bitmap);
 			graphics.SmoothingMode = SmoothingMode.HighQuality;
 			graphics.TextRenderingHint = trh;
@@ -235,11 +306,13 @@ namespace MkRenderer2 {
 			drawFormat.FormatFlags = StringFormatFlags.DirectionVertical;
 			Brush brush = new SolidBrush(BARVA_TEXTU);
 			Font font = new Font("Arial", 11, FontStyle.Regular);
+			Font fontAlt = new Font("Arial", 11, FontStyle.Underline);
 			for(int zavodIndex = 0; zavodIndex < zavody.Count; zavodIndex++) {
 				int x = OFFSET_ZLEVA + zavodIndex * SIRKA_JEDNE_JEDNOTKY;
 				Zavod zavod_ = zavody[zavodIndex];
 				string trat = zavod_.zavod == 99 ? "Final" : zavod_.trat;
-				graphics.DrawString(trat, font, brush, x - 10, OFFSET_ZHORA + MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY + 5, drawFormat);
+				var font_ = zavod_.zavod == 99 ? fontAlt : font;
+				graphics.DrawString(trat, font_, brush, x - 10, OFFSET_ZHORA + MAX_POCET_ZAVODNIKU * VYSKA_JEDNE_JEDNOTKY + 5, drawFormat);
 				for(int zavodnikIndex = 0; zavodnikIndex < zavod_.zavodnici.Count; zavodnikIndex++) {
 					if(zavod_.zavodnici[zavodnikIndex].Item1.isBot) continue;
 
@@ -249,9 +322,9 @@ namespace MkRenderer2 {
 					int y = OFFSET_ZHORA + zavodnik.Item2 * VYSKA_JEDNE_JEDNOTKY;
 					//Color barva = zavod_.zavod == 99 ? Color.Gold : zavodnik.Item1.barva;
 					Color barva = zavodnik.Item1.barva;
-					graphics.DrawEllipse(new Pen(barva), x - 3, y - 3 , 6, 6);
+					graphics.DrawEllipse(new Pen(barva), x - 3, y - 3, 6, 6);
 					if(zavod_.zavod == 99) {
-						graphics.FillEllipse(new SolidBrush(barva), x - 4, y - 4 , 8, 8);
+						graphics.FillEllipse(new SolidBrush(barva), x - 4, y - 4, 8, 8);
 					}
 
 					//draw line to the position of this zavodnik in the next zavod if he is there
@@ -281,7 +354,7 @@ namespace MkRenderer2 {
 			int pocetDni = dates.Count;
 
 			int vyskaBitmapy = 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA + 80;
-			int sirkaBitmapy = pocetDni * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA; 
+			int sirkaBitmapy = pocetDni * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA;
 
 			Bitmap bitmap = new Bitmap(sirkaBitmapy, vyskaBitmapy);
 			Graphics graphics = Graphics.FromImage(bitmap);
@@ -297,7 +370,7 @@ namespace MkRenderer2 {
 			graphics.DrawLine(new Pen(BARVA_CAR), OFFSET_ZLEVA, 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA, pocetDni * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, 12 * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA);
 
 			//draw value at top of the axis
-			graphics.DrawString("1", new Font("Arial", 8), new SolidBrush(BARVA_TEXTU), 0, 5  + OFFSET_ZHORA);
+			graphics.DrawString("1", new Font("Arial", 8), new SolidBrush(BARVA_TEXTU), 0, 5 + OFFSET_ZHORA);
 
 			//draw names diagonally on the horizontal axis
 
@@ -361,11 +434,11 @@ namespace MkRenderer2 {
 								}
 							}
 						}
-						if(notDrawn){
-						graphics.DrawLine(new Pen(zavodnik.barva),
-							(id - 1) * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, previousPoint * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA,
-							id * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, currentValue * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA
-						);
+						if(notDrawn) {
+							graphics.DrawLine(new Pen(zavodnik.barva),
+								(id - 1) * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, previousPoint * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA,
+								id * _SIRKA_JEDNE_JEDNOTKY + OFFSET_ZLEVA, currentValue * _VYSKA_JEDNE_JEDNOTKY + OFFSET_ZHORA
+							);
 						}
 					}
 					previousPoint = currentValue;
@@ -388,6 +461,7 @@ namespace MkRenderer2 {
 
 			foreach(Zavodnik zavodnik in zavodnici) {
 				if(zavodnik.isBot) continue;
+				Console.WriteLine("rendering graph distribuce for " + zavodnik.nick + " (dark: " + dark);
 				Bitmap bitmapa = new Bitmap(300, 200);
 				Graphics graphics = Graphics.FromImage(bitmapa);
 				graphics.SmoothingMode = SmoothingMode.HighQuality;
@@ -409,8 +483,33 @@ namespace MkRenderer2 {
 
 				//draw the graph using graphics.drawline
 				for(int i = 0; i < ints.Length - 1; i++) {
-					graphics.DrawLine(new Pen(zavodnik.barva), 10 + i * 20, 190 - (int)(ints[i] * 180.0 / max), 10 + (i + 1) * 20, 190 - (int)(ints[i + 1] * 180.0 / max));
-					graphics.DrawEllipse(new Pen(zavodnik.barva), 10 + i * 20 - 2, 190 - (int)(ints[i] * 180.0 / max) - 2, 4, 4);
+					int x1 = 10 + i * 20;
+					int y1 = 190 - (int)(ints[i] * 180.0 / max);
+					int x2 = 10 + (i + 1) * 20;
+					int y2 = 190 - (int)(ints[i + 1] * 180.0 / max);
+					try {
+						//graphics.DrawLine(new Pen(zavodnik.barva), 10 + i * 20, 190 - (int)(ints[i] * 180.0 / max), 10 + (i + 1) * 20, 190 - (int)(ints[i + 1] * 180.0 / max));
+						graphics.DrawLine(new Pen(zavodnik.barva), x1, y1, x2, y2);
+					}
+					catch(Exception ex) {
+						ConsoleColor oldColor = Console.ForegroundColor;
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine(String.Concat(Enumerable.Repeat("-", 6)));
+						Console.WriteLine($"error drawing line on line {ex.GetLine()}: {ex.Message} i: {i} max: {max} x1: {x1} y1: {y1} x2: {x2} y2: {y2}");
+						Console.WriteLine(String.Concat(Enumerable.Repeat("-", 6)));
+					}
+					int x = 10 + i * 20 - 2;
+					int y = 190 - (int)(ints[i] * 180.0 / max) - 2;
+					try {
+						graphics.DrawEllipse(new Pen(zavodnik.barva), 10 + i * 20 - 2, 190 - (int)(ints[i] * 180.0 / max) - 2, 4, 4);
+					}
+					catch(Exception ex) {
+						ConsoleColor oldColor = Console.ForegroundColor;
+						Console.ForegroundColor = ConsoleColor.Red;
+						Console.WriteLine(String.Concat(Enumerable.Repeat("-", 6)));
+						Console.WriteLine($"error drawing ellipse on line {ex.GetLine()}: {ex.Message} i: {i} max: {max} x: {x} y: {y}");
+						Console.WriteLine(String.Concat(Enumerable.Repeat("-", 6)));
+					}
 				}
 				graphics.DrawEllipse(new Pen(zavodnik.barva), 10 + 11 * 20 - 2, 190 - (int)(ints[11] * 180.0 / max) - 2, 4, 4);
 
@@ -439,7 +538,7 @@ namespace MkRenderer2 {
 				trh = TextRenderingHint.ClearTypeGridFit;
 				bm = renderGraphPozice(zavody, zavodnici, z.nick, true, false);
 				bm.SaveAsync(dirname + z.nick + "/prubeh_dark.png");
-				
+
 				bm = renderGraphPozice(zavody, zavodnici, z.nick, false, false);
 				bm.SaveAsync(dirname + z.nick + "/prubeh_dark_fullsize.png");
 			}
@@ -450,14 +549,190 @@ namespace MkRenderer2 {
 			trh = TextRenderingHint.AntiAlias;
 			renderGraphDistribuce(zavodnici, false, dirname);
 		}
+
+		public static void vyrenderovatUcast(List<int> pocetUnikatnichZavodniku, List<int> maximalniPocetZavodniku, List<int> minimalniPocetZavodniku, List<float> medianPocetZavodniku, List<string> datumPoctuZavodniku, bool pouzePrvni, string outfile) {
+			if(pocetUnikatnichZavodniku.Count != maximalniPocetZavodniku.Count) {
+				Console.WriteLine("PROSÍM POZOR. pocetUnikatnichZavodniku a maximalniPocetZavodniku nesedí");
+			}
+
+			Color barvaUnikat = Color.Blue;
+			Color barvaMax = Color.Red;
+			Color barvaMedian = Color.Green;
+			Color barvaMin = Color.Gold;
+
+			int delka = Math.Max(pocetUnikatnichZavodniku.Count, maximalniPocetZavodniku.Count);
+
+			int padding = 10;
+			int extraMistoProText = 40;
+			//int maxPocetPolicekVertikalne = 16; //budu doufat že v 1 den nebude vic jak 20 unikátních závodníků
+			int maxPocetPolicekVertikalne = pocetUnikatnichZavodniku.Max();
+			int sirkaJedneJednotky = 20;
+			int vyskaJedneJednotky = 8;
+			int vertikalniCarkuCo = 1;
+			if(pouzePrvni) {
+				vyskaJedneJednotky = 3;
+				vertikalniCarkuCo = 4;
+			}
+			int sirkaBitmapy = (delka - 1) * sirkaJedneJednotky + padding * 2;
+			int vyskaBitmapy = maxPocetPolicekVertikalne * vyskaJedneJednotky + padding * 2;
+
+
+			Bitmap bitmap = new Bitmap(sirkaBitmapy, vyskaBitmapy + extraMistoProText);
+			Graphics graphics = Graphics.FromImage(bitmap);
+			graphics.SmoothingMode = SmoothingMode.HighQuality;
+			graphics.TextRenderingHint = trh;
+
+			Pen pen = new Pen(BARVA_CAR);
+			Brush brush = new SolidBrush(BARVA_TEXTU);
+
+			//draw the horizontal and vertical axis, with dot every sirkaJedneJednotky and vyskaJedneJednotky pixels
+			for(int i = 0; i < delka; i++) {
+				int x = padding + i * sirkaJedneJednotky;
+				int y = vyskaBitmapy - padding;
+				graphics.DrawLine(pen, x, y - 2, x, y + 2);
+			}
+			for(int i = 0; i <= maxPocetPolicekVertikalne; i += vertikalniCarkuCo) {
+				int x = padding;
+				int y = vyskaBitmapy - padding - i * vyskaJedneJednotky;
+				graphics.DrawLine(pen, x - 2, y, x + 2, y);
+			}
+			int x_ = padding;
+			int y_ = vyskaBitmapy - padding - maxPocetPolicekVertikalne * vyskaJedneJednotky;
+			graphics.DrawLine(pen, x_ -2, y_, x_ + 2, y_);
+
+
+			graphics.DrawLine(pen, padding, padding, padding, vyskaBitmapy - padding);
+			graphics.DrawLine(pen, padding, vyskaBitmapy - padding, sirkaBitmapy - padding, vyskaBitmapy - padding);
+
+			for(int i = 1; i < delka; i++) {
+				int pocetUnikatnichZavodniku_ = pocetUnikatnichZavodniku[i];
+				int predchoziPocetUnikatnichZavodniku = pocetUnikatnichZavodniku[i - 1];
+				graphics.DrawLine(new Pen(barvaUnikat), padding + (i - 1) * sirkaJedneJednotky, vyskaBitmapy - padding - predchoziPocetUnikatnichZavodniku * vyskaJedneJednotky, padding + i * sirkaJedneJednotky, vyskaBitmapy - padding - pocetUnikatnichZavodniku_ * vyskaJedneJednotky);
+
+				if(!pouzePrvni) {
+					int maximalniPocetZavodniku_ = maximalniPocetZavodniku[i];
+					int minimalniPocetZavodniku_ = minimalniPocetZavodniku[i];
+					float medianPocetZavodniku_ = medianPocetZavodniku[i];
+
+					int predchoziMaximalniPocetZavodniku = maximalniPocetZavodniku[i - 1];
+					int predchoziMinimalniPocetZavodniku = minimalniPocetZavodniku[i - 1];
+					float predchoziMedianPocetZavodniku = medianPocetZavodniku[i - 1];
+
+				
+					graphics.DrawLine(new Pen(barvaMax), padding + (i - 1) * sirkaJedneJednotky, vyskaBitmapy - padding - predchoziMaximalniPocetZavodniku * vyskaJedneJednotky, padding + i * sirkaJedneJednotky, vyskaBitmapy - padding - maximalniPocetZavodniku_ * vyskaJedneJednotky);
+					graphics.DrawLine(new Pen(barvaMin), padding + (i - 1) * sirkaJedneJednotky, vyskaBitmapy - padding - predchoziMinimalniPocetZavodniku * vyskaJedneJednotky, padding + i * sirkaJedneJednotky, vyskaBitmapy - padding - minimalniPocetZavodniku_ * vyskaJedneJednotky);
+
+					//check if median and previous median are same as maximalni and previous maximalni, if yes, draw the line dashed
+					if(predchoziMedianPocetZavodniku == predchoziMaximalniPocetZavodniku && medianPocetZavodniku_ == maximalniPocetZavodniku_) {
+						graphics.DrawLine(new Pen(barvaMedian) { DashStyle = DashStyle.Dot }, padding + (i - 1) * sirkaJedneJednotky, vyskaBitmapy - padding - (int)(predchoziMedianPocetZavodniku * vyskaJedneJednotky), padding + i * sirkaJedneJednotky, vyskaBitmapy - padding - (int)(medianPocetZavodniku_ * vyskaJedneJednotky));
+					}
+					else {
+						graphics.DrawLine(new Pen(barvaMedian), padding + (i - 1) * sirkaJedneJednotky, vyskaBitmapy - padding - (int)(predchoziMedianPocetZavodniku * vyskaJedneJednotky), padding + i * sirkaJedneJednotky, vyskaBitmapy - padding - (int)(medianPocetZavodniku_ * vyskaJedneJednotky));
+					}
+				}
+			}
+
+			for(int i = 0; i < delka; i++) {
+				graphics.DrawString(datumPoctuZavodniku[i].Substring(5), new Font("Consolas", 8), brush, padding + i * sirkaJedneJednotky - 5, vyskaBitmapy - padding + 5, new StringFormat(StringFormatFlags.DirectionVertical));
+			}
+			graphics.DrawString(maxPocetPolicekVertikalne.ToString(), new Font("Consolas", 7), brush, -2, padding / 2, new StringFormat());
+			graphics.DrawString("0", new Font("Consolas", 7), brush, 0, maxPocetPolicekVertikalne * vyskaJedneJednotky + padding / 2, new StringFormat());
+			graphics.DrawString("12", new Font("Consolas", 7), brush, 0, (maxPocetPolicekVertikalne - 12) * vyskaJedneJednotky + padding / 2, new StringFormat());
+
+			string path = "";
+			string path_dark = "";
+			if(outfile == "") {
+				path = "./out/ucast.png";
+				path_dark = "./out/ucast_dark.png";
+			}
+			else {
+				path = outfile;
+				path_dark = outfile.Replace(".png", "_dark.png");
+			}
+
+			bitmap.Save(path);
+
+			brush = new SolidBrush(Color.White);
+
+			for(int i = 0; i < delka; i++) {
+				graphics.DrawString(datumPoctuZavodniku[i].Substring(5), new Font("Consolas", 8), brush, padding + i * sirkaJedneJednotky - 5, vyskaBitmapy - padding + 5, new StringFormat(StringFormatFlags.DirectionVertical));
+			}
+			graphics.DrawString(maxPocetPolicekVertikalne.ToString(), new Font("Consolas", 7), brush, -2, padding / 2, new StringFormat());
+			graphics.DrawString("0", new Font("Consolas", 7), brush, 0, maxPocetPolicekVertikalne * vyskaJedneJednotky + padding / 2, new StringFormat());
+			graphics.DrawString("12", new Font("Consolas", 7), brush, 0, (maxPocetPolicekVertikalne - 12) * vyskaJedneJednotky + padding / 2, new StringFormat());
+			bitmap.Save(path_dark);
+		}
+
+		public static void vyrenderovatGrafPoctuUjetychZavodu(List<int> ujetyPocetZavodu, List<string> datumPoctuZavodniku) {
+			vyrenderovatUcast(ujetyPocetZavodu, new List<int>(), new List<int>(), new List<float>(), datumPoctuZavodniku, true, "./out/pocetujetychzavodu.png");
+		}
 	}
 
 	public static class HexColorExtensions {
 		public static string ToHex(this Color c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
 	}
 	public static class BitmapExtensions {
+		public static List<string> allSavedBitmaps = new List<string>();
+		public static void ToJpegXL(bool overwrite) {
+			int numberOfBitmaps = allSavedBitmaps.Count;
+			for(int i = 0; i < numberOfBitmaps; i++) {
+				string path = allSavedBitmaps[i];
+				string outPath = path.Replace(".png", ".jxl");
+				if(File.Exists(outPath) && !overwrite) {
+					Console.WriteLine("skipping " + i + ". " + Path.GetFileName(path));
+				}
+				else {
+					Console.WriteLine("converting " + i + ". " + path);
+					string command = $"cjxl \"{path}\" \"{outPath}\" --keep_invisible 0 --patches=1 -q 100 -e 9  --allow_expert_options --brotli_effort=11";
+					Process process = new Process();
+					process.StartInfo.FileName = "cmd.exe";
+					process.StartInfo.Arguments = $"/c {command}";
+					process.StartInfo.UseShellExecute = false;
+					process.StartInfo.RedirectStandardOutput = true;
+					process.StartInfo.RedirectStandardError = true;
+					process.Start();
+					string output = process.StandardOutput.ReadToEnd();
+					string error = process.StandardError.ReadToEnd();
+					process.WaitForExit();
+					long pngSize = new FileInfo(path).Length;
+					long jxlSize = new FileInfo(outPath).Length;
+					Console.WriteLine("png size: " + pngSize + " jxl size: " + jxlSize + " saved: " + (pngSize - jxlSize) + " bytes");
+				}
+
+				Console.WriteLine("Processing " + i + ". out of " + numberOfBitmaps + "bitmaps. Press ESC to abort conversion to JXL");
+				if(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Escape) {
+					Console.WriteLine("Aborting conversion to JXL");
+					break;
+				}
+			}
+		}
+		public static long velikostPng() {
+			long size = 0;
+			foreach(string path in allSavedBitmaps) {
+				FileInfo fi = new FileInfo(path);
+				size += fi.Length;
+			}
+			return size;
+		}
+		public static long velikostJxl() {
+			long size = 0;
+			foreach(string path in allSavedBitmaps) {
+				FileInfo fi = new FileInfo(path.Replace(".png", ".jxl"));
+				size += fi.Length;
+			}
+			return size;
+
+		}
 		public static void SaveAsync(this Bitmap bitmap, string path) {
 			Task.Run(() => bitmap.Save(path));
+			allSavedBitmaps.Add(path);
+		}
+	}
+	public static class ExceptionExtensions {
+		public static int GetLine(this Exception ex) {
+			var st = new StackTrace(ex, true);
+			var frame = st.GetFrame(0);
+			return frame.GetFileLineNumber();
 		}
 	}
 }

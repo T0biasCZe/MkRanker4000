@@ -25,7 +25,41 @@ public class Zaznam {
 public class Trat {
 	public string nazev;
 	public int kolikratVybrano;
+
 }
+public class Trate {
+	public Dictionary<string, int> trate = new Dictionary<string, int>();
+	public void PridatTrat(string nazevTrate) {
+		if(trate.ContainsKey(nazevTrate)) {
+			trate[nazevTrate]++;
+		}
+		else {
+			trate.Add(nazevTrate, 1);
+		}
+	}
+	public void PridatTrate(Trate trate) {
+		foreach(var t in trate.trate) {
+			if(this.trate.ContainsKey(t.Key)) {
+				this.trate[t.Key] += t.Value;
+			}
+			else {
+				this.trate.Add(t.Key, t.Value);
+			}
+		}
+	}
+	public void Seradit() {
+		//sort the dictionary by value, bigger values first
+		trate = trate.OrderByDescending(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+	}
+	public string VypsatTrate() {
+		string s = "";
+		foreach(var t in trate) {
+			s += t.Key + " " + t.Value + "\n";
+		}
+		return s;
+	}
+}
+
 public class Zavodnik {
 	public string nick = "";
 	public Color barva;
@@ -40,7 +74,9 @@ public class Zavodnik {
 
 	public int pocetUjetychDnu;
 	public bool isBot;
-	public List<Trat> vybraneTrate = new List<Trat>();
+	public List<Trat> vlastniVybraneTrate = new List<Trat>();
+	public List<Trat> druheVybraneTrate = new List<Trat>(); // kdyz vice lidi vybere stejnou trat, tak těm ostatnim kterym to nepadlo se to uloži zde
+    public List<Trat> vsechnyVybraneTrate => vlastniVybraneTrate.Concat(druheVybraneTrate).ToList();
 	public void RecalcPos() {
 		//calculate average position of each zavodnik
 		int celkem = 0;
@@ -67,12 +103,22 @@ public class Zavodnik {
 	}
 	public void PridatTrat(string nazevTrate) {
 		//if trat is already in list, increase the kolikratVybrano, else add it as new and set kolikratVybrano to 1
-		Trat t = vybraneTrate.FirstOrDefault(x => x.nazev == nazevTrate);
+		Trat t = vlastniVybraneTrate.FirstOrDefault(x => x.nazev == nazevTrate);
 		if(t != null) {
 			t.kolikratVybrano++;
 		}
 		else {
-			vybraneTrate.Add(new Trat() { nazev = nazevTrate, kolikratVybrano = 1 });
+			vlastniVybraneTrate.Add(new Trat() { nazev = nazevTrate, kolikratVybrano = 1 });
+		}
+	}
+	public void PridatDruhouTrat(string nazevTrate) {
+		//if trat is already in list, increase the kolikratVybrano, else add it as new and set kolikratVybrano to 1
+		Trat t = druheVybraneTrate.FirstOrDefault(x => x.nazev == nazevTrate);
+		if(t != null) {
+			t.kolikratVybrano++;
+		}
+		else {
+			druheVybraneTrate.Add(new Trat() { nazev = nazevTrate, kolikratVybrano = 1 });
 		}
 	}
 }

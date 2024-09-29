@@ -7,9 +7,55 @@ using static MkRenderer2.Render;
 using static Zaznam;
 
 namespace MkRenderer2 {
-	internal class Program {
+	public class Program {
+		public static Dictionary<string, Color> nicknameColors = new Dictionary<string, Color> {
+			{ "Stoupa", Color.Purple },
+			{ "John Beak", Color.Cyan },
+			{ "Tobik", Color.Lime},
+			{ "lilibox", Color.Sienna },
+			{ "BeNiSh", Color.Yellow },
+			{ "Mates", Color.FromArgb(255, 223, 197, 254) },
+			{ "Tom", Color.OrangeRed },
+			{ "Cvrcek", Color.DarkGreen },
+			{ "Boun", Color.DarkGray },
+			{ "Swatty", Color.Salmon },
+			{ "TosKo", Color.DeepSkyBlue },
+		};
 		static void Main(string[] args) {
+			//check if file colourdefinition.csv exists, if yes , load it and overwrite nicknameColors
+			if(!File.Exists("colourdefinition.csv")) {
+				//create file with default values. Use the text names instead of HEX when possible
+				StreamWriter sw = new StreamWriter("colourdefinition.csv");
+				foreach(var pair in nicknameColors) {
+					if(pair.Value.IsNamedColor) {
+						sw.WriteLine(pair.Key + ";" + pair.Value.Name);
+					}
+					else {
+						sw.WriteLine(pair.Key + ";" + pair.Value.ToHex());
+					}
+				}
+				sw.Flush();
+				sw.Close();
+			}
+			else {
+				string[] lines = File.ReadAllLines("colourdefinition.csv");
+				foreach(string line in lines) {
+					string[] parts = line.Split(";");
+					if(parts.Length != 2) {
+						Console.WriteLine("Invalid line in colourdefinition.csv: " + line);
+						continue;
+					}
+					if(Color.FromName(parts[1]).IsKnownColor) {
+						nicknameColors[parts[0]] = Color.FromName(parts[1]);
+					}
+					else {
+						nicknameColors[parts[0]] = ColorTranslator.FromHtml(parts[1]);
+					}
+				}
+			}
+
 			List<Zavodnik> zavodnici_total = new List<Zavodnik>();
+			Trate finalTrate = new Trate();
 
 
 			//for each file in folder .\in
@@ -17,6 +63,16 @@ namespace MkRenderer2 {
 
 			Stopwatch stw = new Stopwatch();
 			stw.Start();
+
+			//statistic how many unique players in each file, and maximal number of players that were playing at the same time
+			List<int> pocetUnikatnichZavodniku = new List<int>();
+			List<int> maximalniPocetZavodniku = new List<int>();
+			List<int> minimalniPocetZavodniku = new List<int>();
+			List<float> medianPocetZavodniku = new List<float>();
+			List<int> ujetyPocetZavodu = new List<int>();
+
+
+			List<string> datumPoctuZavodniku = new List<string>();
 
 			foreach(string file in files) {
 				if(file.EndsWith(".csv") == false) continue;
@@ -27,7 +83,20 @@ namespace MkRenderer2 {
 				List<Zaznam> zaznamy = loadCsv(file);
 
 				Render.init();
-				Render.zpracovatZaznamy(zaznamy, out List<Zavod> zavody, out List<Zavodnik> zavodnici);
+				Render.zpracovatZaznamy(zaznamy, out List<Zavod> zavody, out List<Zavodnik> zavodnici, out int pocetUnikatnichZavodnikuOut, out int maximalniPocetZavodnikuOut, out int minimalniPocetZavodnikuOut, out float medianPocetZavodnikuOut, out int ujetyPocetZavoduOut);
+
+				pocetUnikatnichZavodniku.Add(pocetUnikatnichZavodnikuOut);
+				maximalniPocetZavodniku.Add(maximalniPocetZavodnikuOut);
+				minimalniPocetZavodniku.Add(minimalniPocetZavodnikuOut);
+				medianPocetZavodniku.Add(medianPocetZavodnikuOut);
+				ujetyPocetZavodu.Add(ujetyPocetZavoduOut);
+				datumPoctuZavodniku.Add(filename);
+
+
+				finalTrate.PridatTrate(Render.trate);
+				Render.trate = new Trate();
+
+
 				//Bitmap bm = Render.renderGraphPozice(zaznamy);
 
 				Directory.CreateDirectory($@".\out\{filename}\grafy");
@@ -87,9 +156,14 @@ namespace MkRenderer2 {
 
 						zavodnik_total.pocetUjetychDnu += 1;
 
-						foreach(Trat t in zavodnik.vybraneTrate) {
+						foreach(Trat t in zavodnik.vlastniVybraneTrate) {
 							for(int i = 1; i <= t.kolikratVybrano; i++) {
 								zavodnik_total.PridatTrat(t.nazev);
+							}
+						}
+						foreach(Trat t in zavodnik.druheVybraneTrate) {
+							for(int i = 1; i <= t.kolikratVybrano; i++) {
+								zavodnik_total.PridatDruhouTrat(t.nazev);
 							}
 						}
 
@@ -108,6 +182,7 @@ namespace MkRenderer2 {
 				sw.Flush();
 				sw.Close();
 
+
 			}
 			/*save colour with jmena to barvy.txt with format "#RRGGBB;Nick"*/
 			StreamWriter sww = new StreamWriter($".\\out\\barvy.txt");
@@ -118,11 +193,28 @@ namespace MkRenderer2 {
 			sww.Flush();
 			sww.Close();
 
+			Render.vyrenderovatUcast(pocetUnikatnichZavodniku, maximalniPocetZavodniku, minimalniPocetZavodniku, medianPocetZavodniku, datumPoctuZavodniku, false, "");
+			Render.vyrenderovatGrafPoctuUjetychZavodu(ujetyPocetZavodu, datumPoctuZavodniku);
+
 			Hatlamatla.zpracovatOverallKartickyZavodniku(zavodnici_total);
 
-			stw.Stop();
-			Console.WriteLine("Celkovy cas: " + stw.ElapsedMilliseconds + "ms");
+			Hatlamatla.zpracovatRankingTrati(zavodnici_total, finalTrate);
 
+			long celkovyCas = stw.ElapsedMilliseconds;
+
+			//check for yes/no in the console with timeout of 5s
+			Console.WriteLine("Do you want to overwrite existing jxl files? (yes/no)");
+			Console.Beep(duration: 200, frequency: 1000);
+			string yesno = Reader.ReadLine(5000);
+			bool overwrite = yesno == "yes" ? true : false;
+
+			BitmapExtensions.ToJpegXL(overwrite);
+
+			stw.Stop();
+			Console.WriteLine("Celkovy cas: " + celkovyCas + "ms, čas s konverzí Jpeg XL: " + stw.ElapsedMilliseconds);
+
+			Console.WriteLine("Velikost PNG: " + BitmapExtensions.velikostPng());
+			Console.WriteLine("Velikost JXL: " + BitmapExtensions.velikostJxl());
 		}
 		static Dictionary<string, string> stareNazvyNaNově = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
 			{"TheStoupa", "Stoupa"},
@@ -139,6 +231,7 @@ namespace MkRenderer2 {
 			List<Zaznam> zaznamy = new List<Zaznam>();
 			foreach(string line in lines) {
 				string[] parts = line.Split(";");
+				if(parts[0] == "HEADER") continue;
 				Zaznam zaznam = new Zaznam();
 				zaznam.zprava = parts[0];
 				zaznam.casZaznamu = DateTime.Parse(parts[1]);
@@ -154,7 +247,7 @@ namespace MkRenderer2 {
 				zaznam.cup = int.Parse(parts[5]);
 				zaznam.zavod = int.Parse(parts[6]);
 				zaznam.poradi = int.Parse(parts[7]);
-				zaznam.trat = parts[8];
+				zaznam.trat = FixTrackName(parts[8]);
 				if(parts.Length > 9) {
 					string vybiracTrate = parts[9];
 					//if string "zavodnik" is in dictionary replace it with the new one
@@ -162,14 +255,15 @@ namespace MkRenderer2 {
 						zaznam.vybiracTrate = stareNazvyNaNově[vybiracTrate];
 					}
 					else zaznam.vybiracTrate = vybiracTrate;
-					Console.WriteLine("trat vybrana hračem " + zaznam.vybiracTrate);
+					//Console.WriteLine("trat vybrana hračem " + zaznam.vybiracTrate);
 
-					/*if(parts.Length > 10) {
+					if(parts.Length > 10) {
 						zaznam.isBot = bool.Parse(parts[10]);
-						//continue;
-					}*/
-					zaznam.isBot = isBot(zaznam.zavodnik);
+					}
 
+				}
+				if(zaznam.isBot == false) {
+					zaznam.isBot = isBot(zaznam.zavodnik);
 				}
 				//for now its easier to just ignore bots (future me problem)
 				if(zaznam.isBot) continue;
@@ -180,6 +274,57 @@ namespace MkRenderer2 {
 		static List<string> botsList = new List<string> { "Mario", "Metal Mario", "Gold Mario", "Luigi", "Peach", "Daisy", "Rosalina", "Tanooki Mario", "Cat Peach", "Yoshi", "Toad", "Koopa Troopa", "Shy Guy", "Lakitu", "Toadette", "King Boo", "Baby Mario", "Baby Luigi", "Baby Peach", "Baby Daisy", "Baby Rosalina", "Pink Gold Peach", "Wario", "Waluigi", "Donkey Kong", "Bowser", "Dry Bones", "Bowser Jr.", "Dry Bowser", "Lemmy", "Larry", "Wendy", "Ludwig", "Iggy", "Roy", "Morton", "Inkling Girl", "Inkling Boy", "Link", "Villager", "Isabelle", "Birdo", "Petey Piranha", "Wiggler", "Kamek", "Peachette", "Funky Kong", "Diddy Kong", "Pauline" };
 		public static bool isBot(string nick) {
 			return botsList.Contains(nick);
+		}
+		static Dictionary<string, string> MetricNames = new Dictionary<string, string>{
+			{ "Neo Bowser City", "Neo Koopa City"},
+			{"DK Summit", "DK Snowboard Cross"},
+			{"Music Park", "Melody Motorway"},
+			{"Toad Harbor", "Toad Harbour"},
+			{"Rock Rock Mountain", "Alpine Pass" },
+			{"Bone-Dry Dunes", "Bone Dry Dunes" },
+			{"Piranha Plant Slide", "Piranha Plant Pipeway" },
+			{"Cheese Land", "Cheat Land"},
+			{"Boo Lake", "Bukake"},
+			{"Moonview Highway", "Moonview Motorway"},
+			{"Wario's Gold Mine", "Wario Gold Mine"},
+		};
+		public static string FixTrackName(string track) {
+			if(MetricNames.ContainsKey(track)) {
+				return MetricNames[track];
+			}
+			return track;
+		}
+	}
+
+	class Reader {
+		private static Thread inputThread;
+		private static AutoResetEvent getInput, gotInput;
+		private static string input;
+
+		static Reader() {
+			getInput = new AutoResetEvent(false);
+			gotInput = new AutoResetEvent(false);
+			inputThread = new Thread(reader);
+			inputThread.IsBackground = true;
+			inputThread.Start();
+		}
+
+		private static void reader() {
+			while(true) {
+				getInput.WaitOne();
+				input = Console.ReadLine();
+				gotInput.Set();
+			}
+		}
+
+		// omit the parameter to read a line without a timeout
+		public static string ReadLine(int timeOutMillisecs = Timeout.Infinite) {
+			getInput.Set();
+			bool success = gotInput.WaitOne(timeOutMillisecs);
+			if(success)
+				return input;
+			else
+				throw new TimeoutException("User did not provide input within the timelimit.");
 		}
 	}
 }
