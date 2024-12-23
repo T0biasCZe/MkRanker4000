@@ -42,6 +42,8 @@
 			button2 = new Button();
 			trackBar5 = new TrackBar();
 			label6 = new Label();
+			label_cpuWarn = new Label();
+			checkBox_skipValidation = new CheckBox();
 			position_image = new DataGridViewImageColumn();
 			position = new DataGridViewTextBoxColumn();
 			player_image = new DataGridViewImageColumn();
@@ -190,7 +192,7 @@
 			// 
 			// button1
 			// 
-			button1.Font = new Font("Wingdings", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 2);
+			button1.Font = new Font("Wingdings", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
 			button1.Location = new Point(488, 16);
 			button1.Name = "button1";
 			button1.Size = new Size(24, 32);
@@ -230,6 +232,28 @@
 			label6.TabIndex = 16;
 			label6.Text = "Cislo clip";
 			// 
+			// label_cpuWarn
+			// 
+			label_cpuWarn.AutoSize = true;
+			label_cpuWarn.BackColor = Color.Transparent;
+			label_cpuWarn.Font = new Font("Segoe UI", 20.25F, FontStyle.Bold, GraphicsUnit.Point);
+			label_cpuWarn.ForeColor = Color.Red;
+			label_cpuWarn.Location = new Point(16, 496);
+			label_cpuWarn.Name = "label_cpuWarn";
+			label_cpuWarn.Size = new Size(255, 37);
+			label_cpuWarn.TabIndex = 17;
+			label_cpuWarn.Text = "RUNNING ON CPU";
+			// 
+			// checkBox_skipValidation
+			// 
+			checkBox_skipValidation.AutoSize = true;
+			checkBox_skipValidation.Location = new Point(390, 507);
+			checkBox_skipValidation.Name = "checkBox_skipValidation";
+			checkBox_skipValidation.Size = new Size(102, 19);
+			checkBox_skipValidation.TabIndex = 18;
+			checkBox_skipValidation.Text = "skip validation";
+			checkBox_skipValidation.UseVisualStyleBackColor = true;
+			// 
 			// position_image
 			// 
 			position_image.HeaderText = "Pozice";
@@ -252,7 +276,7 @@
 			// 
 			// player
 			// 
-			player.HeaderText = "závodník";
+			player.HeaderText = "závodník auto";
 			player.Name = "player";
 			player.Visible = false;
 			// 
@@ -276,6 +300,8 @@
 			AutoScaleDimensions = new SizeF(7F, 15F);
 			AutoScaleMode = AutoScaleMode.Font;
 			ClientSize = new Size(577, 538);
+			Controls.Add(checkBox_skipValidation);
+			Controls.Add(label_cpuWarn);
 			Controls.Add(label6);
 			Controls.Add(dataGridView1);
 			Controls.Add(trackBar5);
@@ -328,6 +354,8 @@
 		private Button button2;
 		private TrackBar trackBar5;
 		private Label label6;
+		private Label label_cpuWarn;
+		private CheckBox checkBox_skipValidation;
 		private DataGridViewImageColumn position_image;
 		private DataGridViewTextBoxColumn position;
 		private DataGridViewImageColumn player_image;

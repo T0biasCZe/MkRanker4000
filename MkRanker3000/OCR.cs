@@ -8,6 +8,7 @@ using System.Linq;
 using System.Media;
 using System.Net;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -22,6 +23,10 @@ namespace MkRanker3000 {
 			position_image.ImageLayout = DataGridViewImageCellLayout.Stretch;
 			player_image.ImageLayout = DataGridViewImageCellLayout.Stretch;
 			UpdateComboboxesInDGV();
+
+			if(IsNvidiaAvailable()) {
+				label_cpuWarn.Visible = false;
+			}
 		}
 
 		public List<string> playersList = new List<string>();
@@ -544,6 +549,10 @@ namespace MkRanker3000 {
 		public List<VysledekLite> output = new List<VysledekLite>();
 		public bool success = false;
 		private void button2_Click(object sender, EventArgs e) {
+			if(!validateInput() && !checkBox_skipValidation.Checked){
+				return;
+			}
+
 			output.Clear();
 			foreach(DataGridViewRow row in dataGridView1.Rows) {
 				if(!row.IsNewRow) {
@@ -564,6 +573,90 @@ namespace MkRanker3000 {
 				}
 			}
 			success = true;
+		}
+		public bool validateInput() {
+			//check if there are no empty cells in the position column
+			foreach(DataGridViewRow row in dataGridView1.Rows) {
+				if(!row.IsNewRow) {
+					string pozice = row.Cells[1].Value.ToString();
+					if(string.IsNullOrEmpty(pozice)) {
+						SystemSounds.Asterisk.Play();
+						MessageBox.Show("Pozice v řádku " + (row.Index + 1) + " je prázdná", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						return false;
+					}
+				}
+			}
+			//check if the numbers in the position column arent larger than the index of the row
+			foreach(DataGridViewRow row in dataGridView1.Rows) {
+				if(!row.IsNewRow) {
+					string pozice = row.Cells[1].Value.ToString();
+					int.TryParse(pozice, out int poziceInt);
+					if(poziceInt > row.Index + 1) {
+						SystemSounds.Asterisk.Play();
+						MessageBox.Show("Pozice v řádku " + (row.Index + 1) + " je větší než index řádku", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						return false;
+					}
+				}
+			}
+			//check if player isnt listed twice in the zavodnik column
+			List<string> zavodnici = new List<string>();
+			foreach(DataGridViewRow row in dataGridView1.Rows) {
+				if(!row.IsNewRow) {
+					string zavodnik = row.Cells[4].Value.ToString();
+					if(zavodnici.Contains(zavodnik)) {
+						SystemSounds.Asterisk.Play();
+						MessageBox.Show("Závodník " + zavodnik + " je uveden vícekrát", "Chyba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+						return false;
+					}
+					zavodnici.Add(zavodnik);
+				}
+			}
+			//check if there is column named NULL or N/A, and if there is, ask user if he wants to continue
+			foreach(DataGridViewRow row in dataGridView1.Rows) {
+				if(!row.IsNewRow) {
+					string zavodnik = row.Cells[4].Value.ToString();
+					if(zavodnik == "N/A" || zavodnik == "NUL") {
+						SystemSounds.Question.Play();
+						var result = MessageBox.Show("Závodník " + zavodnik + " je uveden v seznamu, chcete pokračovat?", "Varování", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+						if(result == DialogResult.No) {
+							return false;
+						}
+					}
+				}
+			}
+			return true;
+		}
+
+		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+		public struct DISPLAY_DEVICE {
+			public int cb;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+			public string DeviceName;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+			public string DeviceString;
+			public int StateFlags;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+			public string DeviceID;
+			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+			public string DeviceKey;
+		}
+
+		[DllImport("user32.dll", CharSet = CharSet.Ansi)]
+		public static extern bool EnumDisplayDevices(string lpDevice, uint iDevNum, ref DISPLAY_DEVICE lpDisplayDevice, uint dwFlags);
+
+		public static bool IsNvidiaAvailable() {
+			DISPLAY_DEVICE d = new DISPLAY_DEVICE();
+			d.cb = Marshal.SizeOf(d);
+			uint devNum = 0;
+
+			while(EnumDisplayDevices(null, devNum, ref d, 0)) {
+				if(d.DeviceString.ToLower().Contains("nvidia")) {
+					return true;
+				}
+				devNum++;
+			}
+
+			return false;
 		}
 	}
 	public class VysledekLite {

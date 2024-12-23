@@ -31,7 +31,9 @@ namespace MkRenderer2 {
 			public int cup; //cup number
 			public int zavod; //number of race in this cup
 			public string trat; //name of current track
+			public AnimalCrossingVerze acVerze; //animal crossing version
 			public string vybiracTrate = ""; //person who picked this track
+			public bool vybranoRandom = false;
 			public List<Tuple<Zavodnik, int>> zavodnici = new List<Tuple<Zavodnik, int>>(); //pair of zavodnik and their position in this race
 			public int pocetZavodniku = 0;
 			public int pocetBotu = 0;
@@ -134,7 +136,9 @@ namespace MkRenderer2 {
 					zavod_.cup = cup;
 					zavod_.zavod = zavod;
 					zavod_.trat = zaznam.trat;
+					zavod_.acVerze = zaznam.acVerze;
 					zavod_.vybiracTrate = zaznam.vybiracTrate;
+					zavod_.vybranoRandom = zaznam.vybranoRandom;
 					if(zaznam.vybiracTrate.Length < 1) {
 						//Console.WriteLine("no vybirac ? :(");
 					}
@@ -387,6 +391,7 @@ namespace MkRenderer2 {
 			}
 
 			foreach(Zavodnik zavodnik in zavodnici) {
+				if(!zavodnik.IsWorthy(dates)) continue;
 				if(zavodnik.isBot) continue;
 				for(int i = 0; i < zavodnik.medianyVPrubehuCasu.Count; i++) {
 					int id = dates.IndexOf(zavodnik.medianyVPrubehuCasu[i].Item1);
@@ -451,6 +456,11 @@ namespace MkRenderer2 {
 
 				previousPoint = -99;
 				previousId = -99;
+
+
+
+
+			CONTINUEFOREACH:;
 			}
 
 			return bitmap;

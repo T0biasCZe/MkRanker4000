@@ -184,10 +184,20 @@ namespace MkRenderer2 {
 
 
 			}
+			List<string> dates = new List<string>();
+			foreach(Zavodnik zavodnik in zavodnici_total) {
+				foreach(Tuple<string, double> median in zavodnik.medianyVPrubehuCasu) {
+					if(!dates.Contains(median.Item1)) {
+						dates.Add(median.Item1);
+					}
+				}
+			}
+
 			/*save colour with jmena to barvy.txt with format "#RRGGBB;Nick"*/
 			StreamWriter sww = new StreamWriter($".\\out\\barvy.txt");
 			for(int i = 0; i < zavodnici_total.Count; i++) {
 				if(zavodnici_total[i].isBot) continue;
+				if(!zavodnici_total[i].IsWorthy(dates)) continue;
 				sww.WriteLine(zavodnici_total[i].barva.ToHex() + ";" + zavodnici_total[i].nick);
 			}
 			sww.Flush();
@@ -237,7 +247,7 @@ namespace MkRenderer2 {
 				zaznam.casZaznamu = DateTime.Parse(parts[1]);
 				string zavodnik = parts[2];
 				//if string "zavodnik" is in dictionary replace it with the new one
-				if(stareNazvyNaNově.ContainsKey(zavodnik)) {
+				if(stareNazvyNaNově.ContainsKey(zavodnik.Trim())) {
 					zaznam.zavodnik = stareNazvyNaNově[zavodnik];
 				}
 				else zaznam.zavodnik = zavodnik;
@@ -247,14 +257,55 @@ namespace MkRenderer2 {
 				zaznam.cup = int.Parse(parts[5]);
 				zaznam.zavod = int.Parse(parts[6]);
 				zaznam.poradi = int.Parse(parts[7]);
+
 				zaznam.trat = FixTrackName(parts[8]);
+				string trat = parts[8];
+				if(trat.Contains("Animal Crossing")) {
+					var splitted = trat.Split("-");
+					zaznam.trat = FixTrackName("Animal Crossing");
+					if(splitted.Length > 1) {
+						switch(splitted[1]) {
+							case "J":
+								zaznam.acVerze = AnimalCrossingVerze.Jaro;
+								break;
+							case "L":
+								zaznam.acVerze = AnimalCrossingVerze.Leto;
+								break;
+							case "P":
+								zaznam.acVerze = AnimalCrossingVerze.Podzim;
+								break;
+							case "Z":
+								zaznam.acVerze = AnimalCrossingVerze.Zima;
+								break;
+							default:
+								zaznam.acVerze = AnimalCrossingVerze.Nespecifikovano;
+								break;
+						}
+					}
+					else {
+						zaznam.acVerze = AnimalCrossingVerze.Nespecifikovano;
+					}
+				}
 				if(parts.Length > 9) {
 					string vybiracTrate = parts[9];
-					//if string "zavodnik" is in dictionary replace it with the new one
-					if(stareNazvyNaNově.ContainsKey(vybiracTrate)) {
-						zaznam.vybiracTrate = stareNazvyNaNově[vybiracTrate];
+					if(vybiracTrate.Contains("***")) {
+						vybiracTrate = vybiracTrate.Replace("***", "");
+						zaznam.vybranoRandom = true;
+						//Console.WriteLine("random trat");
+						//Console.Beep(500, 1);
 					}
-					else zaznam.vybiracTrate = vybiracTrate;
+
+					string[] vybiraci = vybiracTrate.Split(",");
+					string vybiracTrateNew = "";
+					foreach(string vybirac in vybiraci) {
+						if(stareNazvyNaNově.ContainsKey(vybirac)) {
+							vybiracTrateNew += stareNazvyNaNově[vybirac] + ",";
+						}
+						else vybiracTrateNew += vybirac + ",";
+					}
+					zaznam.vybiracTrate = vybiracTrateNew.TrimEnd(',');
+
+
 					//Console.WriteLine("trat vybrana hračem " + zaznam.vybiracTrate);
 
 					if(parts.Length > 10) {

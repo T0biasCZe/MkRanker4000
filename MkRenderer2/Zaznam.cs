@@ -6,6 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 
 
+public enum AnimalCrossingVerze {
+	NeniAc,
+	Jaro,
+	Leto,
+	Podzim,
+	Zima,
+	Nespecifikovano
+}
 public class Zaznam {
 	public string zprava = "";
 	public DateTime casZaznamu = DateTime.Now;
@@ -16,7 +24,9 @@ public class Zaznam {
 	public int zavod = 999;
 	public int poradi = 999;
 	public string trat = "";
+	public AnimalCrossingVerze acVerze = AnimalCrossingVerze.NeniAc;
 	public string vybiracTrate = "";
+	public bool vybranoRandom = false;
 	public bool isBot = false;
 	public override string ToString() {
 		return this.zprava + ";" + this.casZaznamu + ";" + this.zavodnik + ";" + this.cc + ";" + this.mirrorOn + ";" + this.cup + ";" + this.zavod + ";" + this.poradi + ";" + this.trat;
@@ -24,8 +34,8 @@ public class Zaznam {
 }
 public class Trat {
 	public string nazev;
+	public AnimalCrossingVerze acVerze;
 	public int kolikratVybrano;
-
 }
 public class Trate {
 	public Dictionary<string, int> trate = new Dictionary<string, int>();
@@ -120,6 +130,34 @@ public class Zavodnik {
 		else {
 			druheVybraneTrate.Add(new Trat() { nazev = nazevTrate, kolikratVybrano = 1 });
 		}
+	}
+
+	public bool IsWorthy(List<string> dates) {
+		int pocetDnuZavodnik = this.pocetUjetychDnu;
+		int pocetDnu = dates.Count;
+		float ucast = (float)pocetDnuZavodnik / pocetDnu;
+
+		bool racedInLast4Days = false;
+		for(int i = this.medianyVPrubehuCasu.Count; i > (this.medianyVPrubehuCasu.Count - 5); i--) {
+			if(i <= 0) break;
+			string date = this.medianyVPrubehuCasu[i - 1].Item1;
+			string currentDate = dates[dates.Count - 1];
+
+			if(date == currentDate) {
+				racedInLast4Days = true;
+				break;
+			}
+		}
+		if(ucast < 0.15 && !racedInLast4Days) {
+			ConsoleColor oldColor = Console.ForegroundColor;
+			Console.ForegroundColor = ConsoleColor.Yellow;
+			Console.WriteLine("--------");
+			Console.WriteLine("skipping " + this.nick + " because of low ucast");
+			Console.WriteLine("--------");
+			Console.ForegroundColor = oldColor;
+			return false;
+		}
+		return true;
 	}
 }
 

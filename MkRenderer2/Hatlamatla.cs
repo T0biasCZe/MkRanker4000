@@ -84,10 +84,10 @@ namespace MkRenderer2 {
 				foreach(var race in cup) {
 					if(race.zavod == 99) continue;
 					if(race.vybiracTrate.Length > 0) {
-						html.Append($"<th>{race.trat}<br>{race.vybiracTrate}</th>");
+						html.Append($"<th>{race.trat}<small>{Utils.ACToString(race.acVerze)}</small><br>{race.vybiracTrate}{(race.vybranoRandom ? "*" : "")}</th>");
 					}
 					else {
-						html.Append($"<th>{race.trat}</th>");
+						html.Append($"<th>{race.trat}<small>{Utils.ACToString(race.acVerze)}</small></th>");
 						//Console.WriteLine("no vybirac trate ? :(");
 					}
 				}

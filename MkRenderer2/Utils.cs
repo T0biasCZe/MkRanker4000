@@ -14,5 +14,19 @@ namespace MkRenderer2 {
 			return (int)Vector3.Distance(c1v, c2v);
 		}
 
+		public static string ACToString(AnimalCrossingVerze ac) {
+			switch(ac) {
+				case AnimalCrossingVerze.Jaro:
+					return " (Jaro)";
+				case AnimalCrossingVerze.Leto:
+					return " (Leto)";
+				case AnimalCrossingVerze.Podzim:
+					return " (Podzim)";
+				case AnimalCrossingVerze.Zima:
+					return " (Zima)";
+				default:
+					return "";
+			}
+		}
 	}
 }
